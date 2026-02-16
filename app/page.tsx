@@ -5,7 +5,8 @@ import Sidebar from '@/components/Sidebar'
 import SearchModal from '@/components/SearchModal'
 import KeyboardShortcutsModal from '@/components/KeyboardShortcutsModal'
 import { Page } from '@/lib/types'
-import { PanelLeft } from 'lucide-react'
+import { PanelLeft, LogIn, LogOut } from 'lucide-react'
+import Link from 'next/link'
 import { useWorkspace } from '@/providers/WorkspaceProvider'
 import PageEditor from '@/components/pages/PageEditor'
 import { useAuth } from '@/providers/AuthProvider'
@@ -16,7 +17,7 @@ export default function Home() {
     const [showSearch, setShowSearch] = useState(false)
     const [showShortcuts, setShowShortcuts] = useState(false)
     const [sidebarOpen, setSidebarOpen] = useState(true)
-    const { user } = useAuth()
+    const { user, isGuest, signOut } = useAuth()
     const { workspace, loading: workspaceLoading, setWorkspace } = useWorkspace()
 
     // Set initial page
@@ -233,14 +234,29 @@ export default function Home() {
                     <div className="flex-1" />
 
                     {user ? (
-                        <div className="text-sm text-gray-600 dark:text-gray-400">{user.email}</div>
+                        <>
+                            <div className="text-sm text-gray-600 dark:text-gray-400">{user.email}</div>
+                            <button
+                                onClick={() => signOut()}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                            >
+                                <LogOut size={14} />
+                                Sign out
+                            </button>
+                        </>
                     ) : (
-                        <div className="text-sm text-gray-600 dark:text-gray-400">Not connected</div>
+                        <Link
+                            href="/auth"
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                        >
+                            <LogIn size={14} />
+                            Sign in
+                        </Link>
                     )}
 
                     <div className="text-[11px] text-gray-400 dark:text-gray-500 flex items-center gap-1">
                         <span className={`w-1.5 h-1.5 rounded-full inline-block ${user ? 'bg-green-400' : 'bg-yellow-400'}`} />
-                        {user ? 'Synced' : 'Local'}
+                        {user ? 'Synced' : isGuest ? 'Guest' : 'Local'}
                     </div>
                 </div>
 

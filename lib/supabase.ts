@@ -1,16 +1,73 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import type { WorkspaceData } from './types'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || 'placeholder-key'
+// ─── Client Setup ────────────────────────────────────────────────────────────
 
-let supabase: any
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-try {
+let supabase: SupabaseClient | null = null
+
+if (supabaseUrl && supabaseKey) {
     supabase = createClient(supabaseUrl, supabaseKey)
-} catch (error) {
-    console.warn('Supabase initialization warning: Environment variables may not be set correctly')
-    supabase = null
 }
 
 export default supabase
 
+// ─── Database Operations ─────────────────────────────────────────────────────
+
+export async function fetchWorkspace(userId: string): Promise<WorkspaceData | null> {
+    if (!supabase) return null
+    
+    const { data, error } = await supabase
+        .from('workspaces')
+        .select('data')
+        .eq('user_id', userId)
+        .single()
+    
+    if (error) {
+        if (error.code === 'PGRST116') return null // No rows found
+        console.error('Failed to fetch workspace:', error)
+        return null
+    }
+    
+    return data?.data as WorkspaceData | null
+}
+
+export async function saveWorkspaceToCloud(
+    userId: string, 
+    workspace: WorkspaceData
+): Promise<boolean> {
+    if (!supabase) return false
+    
+    const { error } = await supabase
+        .from('workspaces')
+        .upsert({
+            user_id: userId,
+            data: workspace,
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' })
+    
+    if (error) {
+        console.error('Failed to save workspace:', error)
+        return false
+    }
+    
+    return true
+}
+
+export async function deleteWorkspaceFromCloud(userId: string): Promise<boolean> {
+    if (!supabase) return false
+    
+    const { error } = await supabase
+        .from('workspaces')
+        .delete()
+        .eq('user_id', userId)
+    
+    if (error) {
+        console.error('Failed to delete workspace:', error)
+        return false
+    }
+    
+    return true
+}
