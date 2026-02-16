@@ -51,7 +51,7 @@ export interface IconProps {
 }
 
 export const Icon = ({ children, size = 16 }: IconProps) => (
-    <div className="flex-shrink-0 flex items-center justify-center w-4 h-4">
+    <div className="flex-shrink-0 flex items-center justify-center" style={{ width: size, height: size }}>
         {children}
     </div>
 )

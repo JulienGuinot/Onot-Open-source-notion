@@ -24,7 +24,7 @@ const COLOR_OPTIONS = [
 export function SelectCell({ value, options, onChange, onAddOption, multi = false }: SelectCellProps) {
     const [isOpen, setIsOpen] = useState(false)
     const [newOptionName, setNewOptionName] = useState('')
-    const [selectedColor, setSelectedColor] = useState(COLOR_OPTIONS[0].value)
+    const [selectedColor, setSelectedColor] = useState(COLOR_OPTIONS[0]?.value ?? '#6b7280')
     const dropdownRef = useRef<HTMLDivElement>(null)
 
     const selectedValues = multi

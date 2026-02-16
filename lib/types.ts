@@ -39,6 +39,8 @@ export interface TableColumn {
     type: ColumnType;
     width: number;
     options?: SelectOption[];
+    hidden?: boolean;
+    wrap?: boolean;
 }
 
 export interface TableRow {

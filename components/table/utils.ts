@@ -1,4 +1,4 @@
-import { TableData, TableColumn, ColumnType } from '@/lib/types'
+import { TableData, ColumnType } from '@/lib/types'
 import { Type, Hash, Calendar, CheckSquare, Link, List, ListChecks } from 'lucide-react'
 
 export function generateId(): string {

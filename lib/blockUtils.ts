@@ -196,8 +196,8 @@ export const getRecommendedNextType = (currentType: BlockType): BlockType => {
  * Creates a copy link for a specific block
  */
 export const createBlockLink = (pageId: string, blockId: string, baseUrl: string = ''): string => {
-    const url = baseUrl || typeof window !== 'undefined' ? window.location.href : ''
-    return `${url}#${blockId}`
+    const url = baseUrl || (typeof window !== 'undefined' ? window.location.href : '')
+    return `${url}#page-${pageId}#${blockId}`
 }
 
 /**

@@ -1,20 +1,647 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Base Styles ─────────────────────────────────────────────── */
+
+:root {
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', Menlo, Monaco, monospace;
+    
+    /* Light mode colors */
+    --bg-primary: #ffffff;
+    --bg-secondary: #fafafa;
+    --bg-tertiary: #f5f5f5;
+    --text-primary: #1a1a1a;
+    --text-secondary: #6b7280;
+    --text-muted: #9ca3af;
+    --border-color: #e5e7eb;
+    --accent-color: #2563eb;
+    --accent-hover: #1d4ed8;
+    --accent-light: #dbeafe;
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+.dark {
+    --bg-primary: #0f0f0f;
+    --bg-secondary: #171717;
+    --bg-tertiary: #1f1f1f;
+    --text-primary: #fafafa;
+    --text-secondary: #a1a1aa;
+    --text-muted: #71717a;
+    --border-color: #27272a;
+    --accent-color: #3b82f6;
+    --accent-hover: #60a5fa;
+    --accent-light: #1e3a5f;
+    
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.4), 0 8px 10px -6px rgb(0 0 0 / 0.3);
+}
+
 html {
     scroll-behavior: smooth;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-        sans-serif;
+    font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
 }
 
-code {
-    font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-        monospace;
+code, pre {
+    font-family: var(--font-mono);
+}
+
+/* ─── Selection ─────────────────────────────────────────────────── */
+
+::selection {
+    background: var(--accent-light);
+    color: var(--accent-color);
+}
+
+.dark ::selection {
+    background: rgba(59, 130, 246, 0.3);
+    color: #93c5fd;
+}
+
+/* ─── Focus States ──────────────────────────────────────────────── */
+
+*:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
+}
+
+input:focus, textarea:focus, select:focus {
+    outline: none;
+}
+
+/* ─── Scrollbar Styles ──────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 10px;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.25);
+    border: 3px solid transparent;
+    background-clip: padding-box;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border: 3px solid transparent;
+    background-clip: padding-box;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border: 3px solid transparent;
+    background-clip: padding-box;
+}
+
+/* ─── Table Styles ─────────────────────────────────────────────── */
+
+.table-cell-transition {
+    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+[draggable="true"] {
+    cursor: grab;
+}
+
+[draggable="true"]:active {
+    cursor: grabbing;
+}
+
+.resize-handle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 4px;
+    height: 100%;
+    cursor: col-resize;
+    background: transparent;
+    transition: background-color 0.15s ease;
+}
+
+.resize-handle:hover,
+.resize-handle.active {
+    background-color: var(--accent-color);
+}
+
+.drag-indicator-left::before {
+    content: '';
+    position: absolute;
+    left: -2px;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background-color: var(--accent-color);
+    border-radius: 2px;
+}
+
+.drag-indicator-top::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -2px;
+    height: 3px;
+    background-color: var(--accent-color);
+    border-radius: 2px;
+}
+
+@keyframes cellFocus {
+    0% { box-shadow: inset 0 0 0 2px rgba(59, 130, 246, 0.5); }
+    100% { box-shadow: inset 0 0 0 2px rgba(59, 130, 246, 1); }
+}
+
+.cell-selected {
+    animation: cellFocus 0.2s ease forwards;
+}
+
+.table-row-hover {
+    transition: background-color 0.1s ease;
+}
+
+.table-scroll::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+}
+
+.table-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.table-scroll::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.4);
+    border-radius: 4px;
+}
+
+.table-scroll::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(156, 163, 175, 0.6);
+}
+
+.dark .table-scroll::-webkit-scrollbar-thumb {
+    background-color: rgba(75, 85, 99, 0.5);
+}
+
+.dark .table-scroll::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(75, 85, 99, 0.7);
+}
+
+/* ─── Menu Animations ───────────────────────────────────────────── */
+
+@keyframes menuSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes menuSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.menu-animate {
+    animation: menuSlideIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.menu-animate-up {
+    animation: menuSlideUp 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.fade-animate {
+    animation: fadeIn 0.2s ease;
+}
+
+.scale-animate {
+    animation: scaleIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ─── Input Styles ──────────────────────────────────────────────── */
+
+.table-cell input:focus,
+.table-cell textarea:focus {
+    outline: none;
+    background-color: transparent;
+}
+
+/* ─── Button Hover Effects ──────────────────────────────────────── */
+
+.btn-hover {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-hover::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: currentColor;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.btn-hover:hover::before {
+    opacity: 0.1;
+}
+
+/* ─── Block Styles ──────────────────────────────────────────────── */
+
+.block-transition {
+    transition: all 0.15s ease;
+}
+
+.block-hover {
+    transition: background-color 0.1s ease;
+}
+
+.block-hover:hover {
+    background-color: var(--bg-secondary);
+}
+
+/* ─── Text Placeholders ─────────────────────────────────────────── */
+
+textarea::placeholder,
+input::placeholder {
+    color: var(--text-muted);
+    opacity: 1;
+}
+
+/* ─── Checkbox Styles ───────────────────────────────────────────── */
+
+input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.15s ease;
+}
+
+input[type="checkbox"]:hover {
+    border-color: var(--accent-color);
+}
+
+input[type="checkbox"]:checked {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 2px;
+    width: 5px;
+    height: 9px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+/* ─── Kbd Styles ────────────────────────────────────────────────── */
+
+kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 6px;
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--text-secondary);
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 1px 0 var(--border-color);
+}
+
+/* ─── Tooltip Styles ────────────────────────────────────────────── */
+
+[data-tooltip] {
+    position: relative;
+}
+
+[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-4px);
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    color: white;
+    background: #1f2937;
+    border-radius: 6px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.15s ease;
+    z-index: 50;
+}
+
+[data-tooltip]:hover::after {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-8px);
+}
+
+.dark [data-tooltip]::after {
+    background: #f3f4f6;
+    color: #1f2937;
+}
+
+/* ─── Loading Animations ────────────────────────────────────────── */
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.animate-pulse-soft {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+    animation: spin 1.5s linear infinite;
+}
+
+/* ─── Gradient Backgrounds ──────────────────────────────────────── */
+
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.bg-gradient-secondary {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.bg-gradient-success {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+/* ─── Sidebar Styles ────────────────────────────────────────────── */
+
+.sidebar-item {
+    position: relative;
+    transition: all 0.15s ease;
+}
+
+.sidebar-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--accent-color);
+    border-radius: 0 3px 3px 0;
+    opacity: 0;
+    transform: scaleY(0);
+    transition: all 0.15s ease;
+}
+
+.sidebar-item.active::before {
+    opacity: 1;
+    transform: scaleY(1);
+}
+
+/* ─── Divider Styles ────────────────────────────────────────────── */
+
+.divider {
+    position: relative;
+    height: 1px;
+    background: var(--border-color);
+}
+
+.divider.gradient {
+    background: linear-gradient(90deg, transparent, var(--border-color), transparent);
+}
+
+/* ─── Toast Notifications ───────────────────────────────────────── */
+
+@keyframes toastIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes toastOut {
+    from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+}
+
+.toast-animate-in {
+    animation: toastIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.toast-animate-out {
+    animation: toastOut 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ─── Modal Backdrop ────────────────────────────────────────────── */
+
+.backdrop-blur-custom {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+/* ─── Code Block Styles ─────────────────────────────────────────── */
+
+.code-block {
+    position: relative;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.code-block::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--accent-color);
+}
+
+/* ─── Quote Block Styles ────────────────────────────────────────── */
+
+.quote-block {
+    position: relative;
+    padding-left: 1rem;
+    border-left: 3px solid var(--border-color);
+    font-style: italic;
+    color: var(--text-secondary);
+}
+
+/* ─── Callout Block Styles ──────────────────────────────────────── */
+
+.callout-block {
+    display: flex;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+/* ─── Image Styles ──────────────────────────────────────────────── */
+
+.image-block {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.2s ease;
+}
+
+.image-block:hover {
+    box-shadow: var(--shadow-md);
+}
+
+/* ─── Toggle Block Styles ───────────────────────────────────────── */
+
+.toggle-block {
+    border-radius: 8px;
+    transition: background-color 0.15s ease;
+}
+
+.toggle-block:hover {
+    background-color: var(--bg-secondary);
+}
+
+.toggle-arrow {
+    transition: transform 0.2s ease;
+}
+
+.toggle-arrow.open {
+    transform: rotate(90deg);
+}
+
+/* ─── Print Styles ──────────────────────────────────────────────── */
+
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    body {
+        background: white;
+        color: black;
+    }
+}
+
+/* ─── Responsive Utilities ──────────────────────────────────────── */
+
+@media (max-width: 640px) {
+    .hide-mobile {
+        display: none;
+    }
+}
+
+@media (min-width: 641px) {
+    .show-mobile-only {
+        display: none;
+    }
+}
+
+/* ─── Accessibility ─────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ─── High Contrast Mode ────────────────────────────────────────── */
+
+@media (prefers-contrast: high) {
+    :root {
+        --border-color: #000000;
+        --text-secondary: #4b5563;
+    }
+    
+    .dark {
+        --border-color: #ffffff;
+        --text-secondary: #d1d5db;
+    }
 }
