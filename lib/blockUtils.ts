@@ -307,3 +307,114 @@ export const getPageBlockStats = (
     return stats
 }
 
+// ─── Deep Operations (recursive for nested blocks) ───────────
+
+/**
+ * Deep duplicates a block, generating new IDs for the block and all children recursively
+ */
+export const deepDuplicateBlock = (block: Block): Block => {
+    const newBlock: Block = {
+        ...block,
+        id: `block-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        autoFocus: false,
+    }
+    if (newBlock.children && newBlock.children.length > 0) {
+        newBlock.children = newBlock.children.map(child => deepDuplicateBlock(child))
+    }
+    return newBlock
+}
+
+/**
+ * Deep finds a block by ID, searching into children recursively
+ */
+export const deepFindBlockById = (blocks: Block[], id: string): Block | undefined => {
+    for (const block of blocks) {
+        if (block.id === id) return block
+        if (block.children) {
+            const found = deepFindBlockById(block.children, id)
+            if (found) return found
+        }
+    }
+    return undefined
+}
+
+// ─── Clipboard Utilities ─────────────────────────────────────
+
+const CLIPBOARD_MARKER = '[[ONOT_BLOCKS]]'
+
+/**
+ * Converts blocks to plain text (for system clipboard)
+ */
+export const blocksToPlainText = (blocks: Block[]): string => {
+    return blocks.map(block => {
+        let text = ''
+        switch (block.type) {
+            case 'h1': text = `# ${block.content}`; break
+            case 'h2': text = `## ${block.content}`; break
+            case 'h3': text = `### ${block.content}`; break
+            case 'bullet-list': text = `- ${block.content}`; break
+            case 'numbered-list': text = `1. ${block.content}`; break
+            case 'todo': text = `${block.checked ? '[x]' : '[ ]'} ${block.content}`; break
+            case 'quote': text = `> ${block.content}`; break
+            case 'code': text = `\`\`\`${block.language || ''}\n${block.content}\n\`\`\``; break
+            case 'divider': text = '---'; break
+            case 'toggle': text = `▸ ${block.content}`; break
+            case 'callout': text = `${block.calloutIcon || '💡'} ${block.content}`; break
+            case 'image': text = block.imageUrl || '[Image]'; break
+            case 'table': text = '[Table]'; break
+            default: text = block.content; break
+        }
+        if (block.children && block.children.length > 0) {
+            const childrenText = blocksToPlainText(block.children)
+                .split('\n').map(line => `  ${line}`).join('\n')
+            text += '\n' + childrenText
+        }
+        return text
+    }).join('\n')
+}
+
+/**
+ * Parses plain text into blocks
+ */
+export const plainTextToBlocks = (text: string): Block[] => {
+    const lines = text.split('\n').filter(line => line.trim() !== '')
+    return lines.map(line => {
+        const trimmed = line.trim()
+        let type: BlockType = 'text'
+        let content = trimmed
+
+        if (trimmed.startsWith('### ')) { type = 'h3'; content = trimmed.slice(4) }
+        else if (trimmed.startsWith('## ')) { type = 'h2'; content = trimmed.slice(3) }
+        else if (trimmed.startsWith('# ')) { type = 'h1'; content = trimmed.slice(2) }
+        else if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) { type = 'bullet-list'; content = trimmed.slice(2) }
+        else if (/^\d+\.\s/.test(trimmed)) { type = 'numbered-list'; content = trimmed.replace(/^\d+\.\s/, '') }
+        else if (trimmed.startsWith('[ ] ')) { type = 'todo'; content = trimmed.slice(4) }
+        else if (trimmed.startsWith('[x] ')) { type = 'todo'; content = trimmed.slice(4) }
+        else if (trimmed.startsWith('> ')) { type = 'quote'; content = trimmed.slice(2) }
+        else if (trimmed === '---' || trimmed === '***') { type = 'divider'; content = '' }
+
+        return createBlock(type, content)
+    })
+}
+
+/**
+ * Serializes blocks with a marker prefix for internal clipboard
+ */
+export const serializeBlocksForClipboard = (blocks: Block[]): string => {
+    return CLIPBOARD_MARKER + JSON.stringify(blocks)
+}
+
+/**
+ * Deserializes blocks from clipboard, returning null if not internal format.
+ * All blocks get new IDs to avoid duplicates.
+ */
+export const deserializeBlocksFromClipboard = (text: string): Block[] | null => {
+    if (!text.startsWith(CLIPBOARD_MARKER)) return null
+    try {
+        const blocks = JSON.parse(text.slice(CLIPBOARD_MARKER.length)) as Block[]
+        return blocks.map(b => deepDuplicateBlock(b))
+    } catch {
+        return null
+    }
+}
+

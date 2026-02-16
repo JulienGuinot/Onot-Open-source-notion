@@ -173,11 +173,9 @@ export function SelectCell({
                     getSelectedOptions().map((opt) => (
                         <span
                             key={opt.id}
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium transition-transform hover:scale-105"
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium transition-transform hover:scale-105 text-zinc-200 dark:text-zinc-800"
                             style={{
-                                backgroundColor: opt.color + '20',
-                                color: opt.color,
-                                border: `1px solid ${opt.color}40`
+                                backgroundColor: opt.color,
                             }}
                         >
                             {opt.label}
@@ -300,11 +298,9 @@ export function SelectCell({
                                         />
                                     ) : (
                                         <span
-                                            className="px-2.5 py-1 rounded-full text-xs font-medium truncate max-w-[160px]"
+                                            className="px-2.5 py-1 rounded-md text-xs font-medium truncate max-w-[160px] text-zinc-200 dark:text-zinc-800 "
                                             style={{
-                                                backgroundColor: opt.color + '20',
-                                                color: opt.color,
-                                                border: `1px solid ${opt.color}40`
+                                                backgroundColor: opt.color,
                                             }}
                                         >
                                             {opt.label}

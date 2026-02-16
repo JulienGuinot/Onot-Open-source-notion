@@ -102,7 +102,6 @@ export default function Sidebar({
                             size={12}
                             className={`text-gray-400 transition-transform duration-200 ${favoritesExpanded ? '' : '-rotate-90'}`}
                         />
-                        <Star size={12} className="text-amber-400" />
                         <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400
                                          uppercase tracking-wider flex-1 text-left">
                             Favorites

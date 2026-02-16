@@ -58,11 +58,11 @@ function RowActionMenu({
 }: RowActionMenuProps) {
   return (
     <CellPortal triggerRef={triggerRef} onClose={onClose} align="left" minWidth={180}>
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="bg-white dark:bg-zinc-800 rounded-xl shadow-2xl border border-gray-200 dark:border-zinc-700 overflow-hidden">
         <div className="p-1">
           <button
             onClick={() => { onInsertAbove(); onClose(); }}
-            className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-left transition-colors"
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 text-left transition-colors"
           >
             <ArrowUp size={14} className="text-gray-400" />
             <span className="dark:text-gray-300">Insert row above</span>
@@ -740,10 +740,10 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
   return (
     <div
       ref={tableRef}
-      className="my-4 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm"
+      className="my-4 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-zinc-800 shadow-sm"
     >
       {/* Toolbar */}
-      <div className="flex items-center gap-1 px-3 py-2 bg-gray-50/80 dark:bg-gray-800/50
+      <div className="flex items-center gap-1 px-3 py-2 bg-gray-50/80 dark:bg-zinc-800/50
                       border-b border-gray-200 dark:border-gray-700 flex-wrap backdrop-blur-sm">
         <button
           onClick={() => {

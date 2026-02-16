@@ -7,6 +7,7 @@ interface CalloutBlockProps {
     block: Block
     onUpdate: (block: Block) => void
     onKeyDown?: (e: KeyboardEvent<HTMLTextAreaElement>) => void
+    autoFocus?: boolean
 }
 
 const CALLOUT_COLORS = [
@@ -18,12 +19,10 @@ const CALLOUT_COLORS = [
     { bg: 'bg-gray-50 dark:bg-gray-800/50', border: 'border-gray-200 dark:border-gray-700', icon: '📝' },
 ]
 
-export default function CalloutBlock({ block, onUpdate, onKeyDown }: CalloutBlockProps) {
+export default function CalloutBlock({ block, onUpdate, onKeyDown, autoFocus }: CalloutBlockProps) {
     const [showIconPicker, setShowIconPicker] = useState(false)
     const textareaRef = useRef<HTMLTextAreaElement>(null)
-    const iconRef = useRef<HTMLButtonElement>(null)
 
-    // Auto-resize textarea
     useEffect(() => {
         if (textareaRef.current) {
             textareaRef.current.style.height = 'auto'
@@ -31,9 +30,20 @@ export default function CalloutBlock({ block, onUpdate, onKeyDown }: CalloutBloc
         }
     }, [block.content])
 
+    useEffect(() => {
+        if (autoFocus && textareaRef.current) {
+            setTimeout(() => {
+                if (textareaRef.current) {
+                    textareaRef.current.focus()
+                    const len = textareaRef.current.value.length
+                    textareaRef.current.setSelectionRange(len, len)
+                }
+            }, 0)
+        }
+    }, [autoFocus])
+
     const currentIcon = block.calloutIcon || '💡'
-    
-    // Determine color scheme based on icon
+
     const getColorScheme = () => {
         const icon = currentIcon
         if (['⚠️', '⚡', '🔔', '📢'].includes(icon)) return CALLOUT_COLORS[1]
@@ -51,28 +61,26 @@ export default function CalloutBlock({ block, onUpdate, onKeyDown }: CalloutBloc
     const commonEmojis = ['💡', '⚠️', '✅', '❌', '📝', '🔥', '⭐', '💜', '🎯', '🚀', '💪', '📌', '🔔', '✨', '💬', '❓']
 
     return (
-        <div className={`flex items-start gap-3 p-4 rounded-xl ${bgClass} border ${borderClass} 
+        <div className={`flex items-start gap-3 p-4 rounded-xl ${bgClass} border ${borderClass}
                         transition-all duration-200 hover:shadow-sm group`}>
             {/* Icon button */}
             <div className="relative">
                 <button
-                    ref={iconRef}
                     onClick={() => setShowIconPicker(!showIconPicker)}
-                    className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/5 
+                    className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-black/5 dark:hover:bg-white/5
                                transition-colors cursor-pointer text-xl"
                     title="Change icon"
                 >
                     {currentIcon}
                 </button>
 
-                {/* Icon picker dropdown */}
                 {showIconPicker && (
                     <>
-                        <div 
-                            className="fixed inset-0 z-40" 
-                            onClick={() => setShowIconPicker(false)} 
+                        <div
+                            className="fixed inset-0 z-40"
+                            onClick={() => setShowIconPicker(false)}
                         />
-                        <div className="absolute top-full left-0 mt-2 z-50 bg-white dark:bg-gray-800 rounded-xl shadow-xl 
+                        <div className="absolute top-full left-0 mt-2 z-50 bg-white dark:bg-gray-800 rounded-xl shadow-xl
                                         border border-gray-200 dark:border-gray-700 p-3 w-64 menu-animate">
                             <div className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-2 uppercase tracking-wider">
                                 Choose icon
@@ -98,7 +106,7 @@ export default function CalloutBlock({ block, onUpdate, onKeyDown }: CalloutBloc
                                     type="text"
                                     placeholder="Custom emoji..."
                                     maxLength={2}
-                                    className="w-full px-2 py-1.5 text-sm bg-gray-50 dark:bg-gray-900 rounded-lg 
+                                    className="w-full px-2 py-1.5 text-sm bg-gray-50 dark:bg-gray-900 rounded-lg
                                                border border-gray-200 dark:border-gray-700 outline-none
                                                focus:border-blue-400 dark:focus:border-blue-500 transition-colors"
                                     onChange={(e) => {
@@ -114,16 +122,18 @@ export default function CalloutBlock({ block, onUpdate, onKeyDown }: CalloutBloc
             </div>
 
             {/* Content */}
-            <textarea
-                ref={textareaRef}
-                value={block.content}
-                onChange={(e) => onUpdate({ ...block, content: e.target.value })}
-                onKeyDown={onKeyDown}
-                placeholder="Type a note..."
-                className="flex-1 outline-none bg-transparent text-gray-700 dark:text-gray-300 resize-none 
-                           leading-relaxed placeholder:text-gray-400 dark:placeholder:text-gray-500 min-h-[24px]"
-                rows={1}
-            />
+            <div className="flex-1 min-w-0">
+                <textarea
+                    ref={textareaRef}
+                    value={block.content}
+                    onChange={(e) => onUpdate({ ...block, content: e.target.value })}
+                    onKeyDown={onKeyDown}
+                    placeholder="Type a note..."
+                    className="w-full outline-none bg-transparent text-gray-700 dark:text-gray-300 resize-none
+                               leading-relaxed placeholder:text-gray-400 dark:placeholder:text-gray-500 min-h-[24px]"
+                    rows={1}
+                />
+            </div>
         </div>
     )
 }
