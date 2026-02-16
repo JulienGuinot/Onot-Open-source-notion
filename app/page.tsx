@@ -185,7 +185,7 @@ export default function Home() {
     }
 
     return (
-        <div className="flex h-screen bg-white dark:bg-gray-900 transition-colors">
+        <div className="flex h-screen bg-white dark:bg-zinc-800 transition-colors">
             {/* Sidebar */}
             <div
                 className={`transition-all duration-300 ease-in-out overflow-hidden ${sidebarOpen ? 'w-60' : 'w-0'
@@ -210,7 +210,7 @@ export default function Home() {
             {/* Main area */}
             <div className="flex-1 flex flex-col min-w-0">
                 {/* Top bar */}
-                <div className="border-b border-gray-200 dark:border-gray-800 px-4 py-2.5 flex items-center gap-3 bg-white dark:bg-gray-900 z-10">
+                <div className="px-4 py-2.5 flex items-center gap-3  z-10">
                     <button
                         onClick={() => setSidebarOpen(!sidebarOpen)}
                         className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
@@ -235,7 +235,7 @@ export default function Home() {
 
                     {user ? (
                         <>
-                            <div className="text-sm text-gray-600 dark:text-gray-400">{user.email}</div>
+                            <div className="text-sm text-blue-600 bg-blue-500/10 dark:bg-blue-500/20  dark:text-gray-400 border border-blue-500 rounded-lg p-2">{user.email}</div>
                             <button
                                 onClick={() => signOut()}
                                 className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"

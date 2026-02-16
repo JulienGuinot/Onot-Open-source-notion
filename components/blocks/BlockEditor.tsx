@@ -561,7 +561,7 @@ export default function BlockEditor({
             case 'quote':
                 return 'italic text-gray-600 dark:text-gray-400 border-l-4 border-gray-300 dark:border-gray-600 pl-4'
             case 'code':
-                return 'font-mono text-sm bg-gray-100 dark:bg-gray-800 p-3 rounded-lg'
+                return 'font-mono text-sm bg-gray-200 dark:bg-gray-800 p-3 rounded-lg'
             case 'bullet-list':
                 return 'pl-6 relative before:content-["•"] before:absolute before:left-2 before:text-gray-400'
             case 'numbered-list':
