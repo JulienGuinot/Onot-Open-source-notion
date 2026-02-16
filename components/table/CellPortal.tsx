@@ -1,15 +1,26 @@
 import { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 
-interface TablePortalProps {
+interface CellPortalProps {
     children: React.ReactNode;
     onClose: () => void;
     triggerRef: React.RefObject<HTMLElement | null>;
+    align?: 'left' | 'right' | 'center';
+    position?: 'bottom' | 'top' | 'auto';
     className?: string;
+    minWidth?: number;
 }
 
-export function TablePortal({ children, onClose, triggerRef, className = '' }: TablePortalProps) {
-    const [position, setPosition] = useState({ top: 0, left: 0, placement: 'bottom' as 'top' | 'bottom' });
+export function CellPortal({
+    children,
+    onClose,
+    triggerRef,
+    align = 'left',
+    position = 'auto',
+    className = '',
+    minWidth,
+}: CellPortalProps) {
+    const [coords, setCoords] = useState({ top: 0, left: 0, placement: 'bottom' as 'top' | 'bottom' });
     const menuRef = useRef<HTMLDivElement>(null);
     const [mounted, setMounted] = useState(false);
 
@@ -17,19 +28,22 @@ export function TablePortal({ children, onClose, triggerRef, className = '' }: T
         if (!triggerRef.current) return;
 
         const rect = triggerRef.current.getBoundingClientRect();
-        const menuHeight = menuRef.current?.offsetHeight || 400;
-        const menuWidth = menuRef.current?.offsetWidth || 288;
+        const menuHeight = menuRef.current?.offsetHeight || 300;
+        const menuWidth = menuRef.current?.offsetWidth || 200;
 
         // Determine vertical placement
-        const spaceBelow = window.innerHeight - rect.bottom;
-        const spaceAbove = rect.top;
         let placement: 'top' | 'bottom' = 'bottom';
-        
-        if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
-            placement = 'top';
+        if (position === 'auto') {
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const spaceAbove = rect.top;
+            if (spaceBelow < menuHeight && spaceAbove > spaceBelow) {
+                placement = 'top';
+            }
+        } else {
+            placement = position === 'top' ? 'top' : 'bottom';
         }
 
-        // Calculate positions
+        // Calculate top position
         let top: number;
         if (placement === 'bottom') {
             top = rect.bottom + 4;
@@ -37,25 +51,36 @@ export function TablePortal({ children, onClose, triggerRef, className = '' }: T
             top = rect.top - menuHeight - 4;
         }
 
-        let left = rect.left;
+        // Calculate left position based on alignment
+        let left: number;
+        switch (align) {
+            case 'right':
+                left = rect.right - menuWidth;
+                break;
+            case 'center':
+                left = rect.left + rect.width / 2 - menuWidth / 2;
+                break;
+            case 'left':
+            default:
+                left = rect.left;
+        }
 
         // Ensure menu stays within viewport
         const padding = 8;
-        if (left + menuWidth > window.innerWidth - padding) {
-            left = window.innerWidth - menuWidth - padding;
-        }
         if (left < padding) {
             left = padding;
+        } else if (left + menuWidth > window.innerWidth - padding) {
+            left = window.innerWidth - menuWidth - padding;
         }
+
         if (top < padding) {
             top = padding;
-        }
-        if (top + menuHeight > window.innerHeight - padding) {
+        } else if (top + menuHeight > window.innerHeight - padding) {
             top = window.innerHeight - menuHeight - padding;
         }
 
-        setPosition({ top, left, placement });
-    }, [triggerRef]);
+        setCoords({ top, left, placement });
+    }, [triggerRef, align, position]);
 
     useLayoutEffect(() => {
         setMounted(true);
@@ -72,6 +97,7 @@ export function TablePortal({ children, onClose, triggerRef, className = '' }: T
         window.addEventListener('resize', handleUpdate);
         window.addEventListener('scroll', handleUpdate, true);
 
+        // Update position when menu content changes
         const observer = new ResizeObserver(handleUpdate);
         if (menuRef.current) {
             observer.observe(menuRef.current);
@@ -116,12 +142,13 @@ export function TablePortal({ children, onClose, triggerRef, className = '' }: T
     return createPortal(
         <div
             ref={menuRef}
-            className={`${className} ${position.placement === 'top' ? 'menu-animate-up' : 'menu-animate'}`}
+            className={`${className} ${coords.placement === 'top' ? 'menu-animate-up' : 'menu-animate'}`}
             style={{
                 position: 'fixed',
-                top: position.top,
-                left: position.left,
+                top: coords.top,
+                left: coords.left,
                 zIndex: 9999,
+                minWidth: minWidth || (triggerRef.current?.offsetWidth || 200),
             }}
         >
             {children}
@@ -129,3 +156,4 @@ export function TablePortal({ children, onClose, triggerRef, className = '' }: T
         document.body
     );
 }
+

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { ExternalLink } from 'lucide-react'
+import { ExternalLink, Link } from 'lucide-react'
 
 interface UrlCellProps {
     value: string | null
@@ -18,13 +18,19 @@ export function UrlCell({ value, onChange }: UrlCellProps) {
     useEffect(() => {
         if (isEditing && inputRef.current) {
             inputRef.current.focus()
+            inputRef.current.select()
         }
     }, [isEditing])
 
     const handleBlur = () => {
         setIsEditing(false)
-        if (localValue !== (value || '')) {
-            onChange(localValue)
+        let finalValue = localValue.trim()
+        // Auto-add https:// if missing
+        if (finalValue && !finalValue.match(/^https?:\/\//)) {
+            finalValue = 'https://' + finalValue
+        }
+        if (finalValue !== (value || '')) {
+            onChange(finalValue)
         }
     }
 
@@ -34,6 +40,15 @@ export function UrlCell({ value, onChange }: UrlCellProps) {
         } else if (e.key === 'Escape') {
             setLocalValue(value || '')
             setIsEditing(false)
+        }
+    }
+
+    const getDisplayUrl = (url: string) => {
+        try {
+            const parsed = new URL(url)
+            return parsed.hostname + (parsed.pathname !== '/' ? parsed.pathname : '')
+        } catch {
+            return url
         }
     }
 
@@ -47,7 +62,7 @@ export function UrlCell({ value, onChange }: UrlCellProps) {
                 onBlur={handleBlur}
                 onKeyDown={handleKeyDown}
                 placeholder="https://..."
-                className="w-full px-2 py-1 bg-transparent outline-none text-sm dark:text-gray-200"
+                className="w-full px-2 py-1.5 bg-transparent outline-none text-sm dark:text-gray-200"
             />
         )
     }
@@ -55,23 +70,25 @@ export function UrlCell({ value, onChange }: UrlCellProps) {
     return (
         <div
             onClick={() => setIsEditing(true)}
-            className="w-full px-2 py-1 min-h-[28px] text-sm cursor-text flex items-center gap-1"
+            className="w-full px-2 py-1.5 min-h-[32px] text-sm cursor-text flex items-center gap-1.5 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
         >
             {value ? (
-                <>
-                    <a
-                        href={value}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1 truncate"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <span className="truncate">{value}</span>
-                        <ExternalLink size={12} className="flex-shrink-0" />
-                    </a>
-                </>
+                <a
+                    href={value}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 flex items-center gap-1.5 truncate group"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <Link size={12} className="flex-shrink-0 text-blue-400" />
+                    <span className="truncate underline-offset-2 group-hover:underline">{getDisplayUrl(value)}</span>
+                    <ExternalLink size={12} className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </a>
             ) : (
-                <span className="text-gray-400">Empty</span>
+                <span className="text-gray-400 flex items-center gap-1.5">
+                    <Link size={12} />
+                    Add URL
+                </span>
             )}
         </div>
     )

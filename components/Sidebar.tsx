@@ -55,10 +55,8 @@ export default function Sidebar({
             <div className="p-3 border-b border-gray-200/60 dark:border-gray-800/60">
                 <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-md bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-sm">
-                            <Sparkles size={14} className="text-white" />
-                        </div>
-                        <h1 className="font-semibold text-sm text-gray-800 dark:text-gray-200">
+
+                        <h1 className="font-semibold text-xl text-gray-800 dark:text-gray-200">
                             Onot
                         </h1>
                     </div>
@@ -95,14 +93,14 @@ export default function Sidebar({
             {/* Favorites */}
             {favorites.length > 0 && (
                 <div className="px-2 pt-3 pb-1">
-                    <button 
+                    <button
                         onClick={() => setFavoritesExpanded(!favoritesExpanded)}
                         className="w-full flex items-center gap-1.5 px-2 py-1 mb-1 rounded-md
                                    hover:bg-gray-100/70 dark:hover:bg-gray-800/40 transition-colors group"
                     >
-                        <ChevronDown 
-                            size={12} 
-                            className={`text-gray-400 transition-transform duration-200 ${favoritesExpanded ? '' : '-rotate-90'}`} 
+                        <ChevronDown
+                            size={12}
+                            className={`text-gray-400 transition-transform duration-200 ${favoritesExpanded ? '' : '-rotate-90'}`}
                         />
                         <Star size={12} className="text-amber-400" />
                         <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400
@@ -113,7 +111,7 @@ export default function Sidebar({
                             {favorites.length}
                         </span>
                     </button>
-                    
+
                     <div className={`overflow-hidden transition-all duration-200 ${favoritesExpanded ? 'max-h-96' : 'max-h-0'}`}>
                         {favorites.map((pageId) => {
                             const page = pages[pageId]
@@ -125,8 +123,8 @@ export default function Sidebar({
                                     className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left
                                                transition-all duration-150 text-sm group
                                                ${currentPageId === pageId
-                                                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
-                                                    : 'hover:bg-gray-100/70 dark:hover:bg-gray-800/50 text-gray-700 dark:text-gray-300'}`}
+                                            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                                            : 'hover:bg-gray-100/70 dark:hover:bg-gray-800/50 text-gray-700 dark:text-gray-300'}`}
                                 >
                                     <span className="text-sm group-hover:scale-110 transition-transform">{page.icon || '📄'}</span>
                                     <span className="truncate flex-1">
@@ -141,14 +139,14 @@ export default function Sidebar({
 
             {/* Pages */}
             <div className="flex-1 overflow-y-auto px-2 pt-3 pb-2">
-                <button 
+                <button
                     onClick={() => setPagesExpanded(!pagesExpanded)}
                     className="w-full flex items-center gap-1.5 px-2 py-1 mb-1 rounded-md
                                hover:bg-gray-100/70 dark:hover:bg-gray-800/40 transition-colors group"
                 >
-                    <ChevronDown 
-                        size={12} 
-                        className={`text-gray-400 transition-transform duration-200 ${pagesExpanded ? '' : '-rotate-90'}`} 
+                    <ChevronDown
+                        size={12}
+                        className={`text-gray-400 transition-transform duration-200 ${pagesExpanded ? '' : '-rotate-90'}`}
                     />
                     <span className="text-[11px] font-semibold text-gray-500 dark:text-gray-400
                                      uppercase tracking-wider flex-1 text-left">
@@ -166,7 +164,7 @@ export default function Sidebar({
                         <Plus size={12} className="text-gray-400" />
                     </button>
                 </button>
-                
+
                 <div className={`overflow-hidden transition-all duration-200 ${pagesExpanded ? 'max-h-[9999px]' : 'max-h-0'}`}>
                     {rootPages.map((pageId) => {
                         const page = pages[pageId]
@@ -228,7 +226,7 @@ export default function Sidebar({
                         ⌘N
                     </kbd>
                 </button>
-                
+
                 {onShowShortcuts && (
                     <button
                         onClick={onShowShortcuts}

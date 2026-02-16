@@ -278,7 +278,7 @@ export default function ContextMenu({
 
     const MenuItemComponent = ({ item, index }: { item: MenuItem; index: number }) => {
         const Icon = item.icon as React.ReactNode
-        
+
         return (
             <div
                 className="relative"
@@ -294,7 +294,7 @@ export default function ContextMenu({
                 onMouseLeave={() => {
                     submenuTimeoutRef.current = setTimeout(() => {
                         setActiveSubmenu(null)
-                    }, 100)
+                    }, 200)
                 }}
             >
                 {item.dividerBefore && (
@@ -316,18 +316,17 @@ export default function ContextMenu({
                     `}
                     style={{ width: 'calc(100% - 8px)' }}
                 >
-                    <span className={`flex-shrink-0 transition-colors ${
-                        selectedIndex === index && !item.disabled
-                            ? item.destructive ? 'text-red-500' : 'text-blue-500'
-                            : 'text-gray-400'
-                    }`}>
+                    <span className={`flex-shrink-0 transition-colors ${selectedIndex === index && !item.disabled
+                        ? item.destructive ? 'text-red-500' : 'text-blue-500'
+                        : 'text-gray-400'
+                        }`}>
                         {Icon}
                     </span>
                     <span className="flex-1 font-medium">{item.label}</span>
                     {item.shortcut && (
                         <kbd className={`ml-auto text-[10px] px-1.5 py-0.5 rounded
-                            ${item.destructive 
-                                ? 'bg-red-100 dark:bg-red-900/30 text-red-500' 
+                            ${item.destructive
+                                ? 'bg-red-100 dark:bg-red-900/30 text-red-500'
                                 : 'bg-gray-100 dark:bg-gray-700 text-gray-500'
                             }
                         `}>
@@ -341,47 +340,64 @@ export default function ContextMenu({
 
                 {/* Submenu */}
                 {item.submenu && activeSubmenu === item.id && (
-                    <div 
-                        className="absolute left-full top-0 ml-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700
-                            rounded-xl shadow-2xl z-50 py-2 min-w-48 max-h-80 overflow-y-auto menu-animate"
-                        onMouseEnter={() => {
-                            if (submenuTimeoutRef.current) {
-                                clearTimeout(submenuTimeoutRef.current)
-                            }
-                            setActiveSubmenu(item.id)
-                        }}
-                        onMouseLeave={() => {
-                            submenuTimeoutRef.current = setTimeout(() => {
-                                setActiveSubmenu(null)
-                            }, 100)
-                        }}
-                    >
-                        {item.submenu.items.map((subitem, subIndex) => {
-                            const SubIcon = subitem.icon
-                            const isSelected = activeSubmenu === item.id && submenuSelectedIndex === subIndex
-                            return (
-                                <button
-                                    key={subitem.id}
-                                    onClick={() => handleMenuAction(subitem.action)}
-                                    onMouseEnter={() => setSubmenuSelectedIndex(subIndex)}
-                                    className={`w-full flex items-center gap-3 px-3 py-2 mx-1 text-sm text-left transition-colors rounded-md
-                                        ${isSelected 
-                                            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' 
-                                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                                        }`}
-                                    style={{ width: 'calc(100% - 8px)' }}
-                                >
-                                    {SubIcon && (
-                                        <SubIcon size={16} className={`flex-shrink-0 ${isSelected ? 'text-blue-500' : 'text-gray-400'}`} />
-                                    )}
-                                    <span className="font-medium">{subitem.label}</span>
-                                    {isSelected && (
-                                        <kbd className="ml-auto px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-[10px] text-gray-500">↵</kbd>
-                                    )}
-                                </button>
-                            )
-                        })}
-                    </div>
+                    <>
+                        {/* Invisible bridge to prevent gap issues when moving mouse to submenu */}
+                        <div
+                            className="absolute left-full top-0 w-4 h-full"
+                            onMouseEnter={() => {
+                                if (submenuTimeoutRef.current) {
+                                    clearTimeout(submenuTimeoutRef.current)
+                                }
+                                setActiveSubmenu(item.id)
+                            }}
+                        />
+                        <div
+                            className="absolute left-full top-0 ml-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700
+                                rounded-xl shadow-2xl z-[60] py-2 min-w-48 max-h-80 overflow-y-auto menu-animate"
+                            onMouseEnter={() => {
+                                if (submenuTimeoutRef.current) {
+                                    clearTimeout(submenuTimeoutRef.current)
+                                }
+                                setActiveSubmenu(item.id)
+                            }}
+                            onMouseLeave={() => {
+                                submenuTimeoutRef.current = setTimeout(() => {
+                                    setActiveSubmenu(null)
+                                }, 150)
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {item.submenu.items.map((subitem, subIndex) => {
+                                const SubIcon = subitem.icon
+                                const isSelected = activeSubmenu === item.id && submenuSelectedIndex === subIndex
+                                return (
+                                    <button
+                                        key={subitem.id}
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            e.preventDefault()
+                                            handleMenuAction(subitem.action)
+                                        }}
+                                        onMouseEnter={() => setSubmenuSelectedIndex(subIndex)}
+                                        className={`w-full flex items-center gap-3 px-3 py-2 mx-1 text-sm text-left transition-colors rounded-md cursor-pointer
+                                            ${isSelected
+                                                ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                                                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                            }`}
+                                        style={{ width: 'calc(100% - 8px)' }}
+                                    >
+                                        {SubIcon && (
+                                            <SubIcon size={16} className={`flex-shrink-0 ${isSelected ? 'text-blue-500' : 'text-gray-400'}`} />
+                                        )}
+                                        <span className="font-medium">{subitem.label}</span>
+                                        {isSelected && (
+                                            <kbd className="ml-auto px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-[10px] text-gray-500">↵</kbd>
+                                        )}
+                                    </button>
+                                )
+                            })}
+                        </div>
+                    </>
                 )}
             </div>
         )
@@ -392,8 +408,8 @@ export default function ContextMenu({
             ref={menuRef}
             className="fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 
                  rounded-xl shadow-2xl z-50 py-2 min-w-56 menu-animate"
-            style={{ 
-                left: x, 
+            style={{
+                left: x,
                 top: y,
                 boxShadow: '0 10px 40px -10px rgba(0,0,0,0.25), 0 0 0 1px rgba(0,0,0,0.05)'
             }}

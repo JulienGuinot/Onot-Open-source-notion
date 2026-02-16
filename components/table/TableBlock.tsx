@@ -16,6 +16,7 @@ import { DateCell } from './cells/DateCell';
 import { CheckboxCell } from './cells/CheckboxCell';
 import { ColumnHeaderMenu } from './ColumnHeaderMenu';
 import { TablePortal } from './TablePortal';
+import { CellPortal } from './CellPortal';
 
 // ─── Types ─────────────────────────────────────────────────────
 
@@ -34,6 +35,65 @@ interface CellPosition {
 type CalculationType = 'none' | 'count' | 'count-values' | 'count-unique' | 'count-empty' |
   'count-not-empty' | 'percent-empty' | 'percent-not-empty' |
   'sum' | 'average' | 'median' | 'min' | 'max' | 'range';
+
+// ─── Row Action Menu Component ─────────────────────────────────
+
+interface RowActionMenuProps {
+  rowId: string;
+  onInsertAbove: () => void;
+  onInsertBelow: () => void;
+  onDuplicate: () => void;
+  onDelete: () => void;
+  onClose: () => void;
+  triggerRef: React.RefObject<HTMLElement | null>;
+}
+
+function RowActionMenu({
+  onInsertAbove,
+  onInsertBelow,
+  onDuplicate,
+  onDelete,
+  onClose,
+  triggerRef
+}: RowActionMenuProps) {
+  return (
+    <CellPortal triggerRef={triggerRef} onClose={onClose} align="left" minWidth={180}>
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="p-1">
+          <button
+            onClick={() => { onInsertAbove(); onClose(); }}
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-left transition-colors"
+          >
+            <ArrowUp size={14} className="text-gray-400" />
+            <span className="dark:text-gray-300">Insert row above</span>
+          </button>
+          <button
+            onClick={() => { onInsertBelow(); onClose(); }}
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-left transition-colors"
+          >
+            <ArrowDown size={14} className="text-gray-400" />
+            <span className="dark:text-gray-300">Insert row below</span>
+          </button>
+          <button
+            onClick={() => { onDuplicate(); onClose(); }}
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-left transition-colors"
+          >
+            <Copy size={14} className="text-gray-400" />
+            <span className="dark:text-gray-300">Duplicate row</span>
+          </button>
+          <div className="my-1 mx-2 border-t border-gray-100 dark:border-gray-700" />
+          <button
+            onClick={() => { onDelete(); onClose(); }}
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 text-left transition-colors"
+          >
+            <Trash2 size={14} />
+            <span>Delete row</span>
+          </button>
+        </div>
+      </div>
+    </CellPortal>
+  );
+}
 
 // ─── Main Table Block ─────────────────────────────────────────
 
@@ -57,14 +117,30 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
   const [showHiddenColumnsMenu, setShowHiddenColumnsMenu] = useState(false);
   const [columnCalculations, setColumnCalculations] = useState<Record<string, CalculationType>>({});
   const [showCalcMenu, setShowCalcMenu] = useState<string | null>(null);
-  const [rowActionMenu, setRowActionMenu] = useState<string | null>(null);
+  const [rowActionMenu, setRowActionMenu] = useState<{ rowId: string; element: HTMLElement } | null>(null);
 
   const resizeStartX = useRef(0);
   const resizeStartWidth = useRef(0);
   const tableRef = useRef<HTMLDivElement>(null);
   const dragPreviewRef = useRef<HTMLDivElement | null>(null);
 
-  // Sync to parent
+  // Keep a ref to the latest tableData for closures
+  const tableDataRef = useRef(tableData);
+  tableDataRef.current = tableData;
+
+  // Sync from parent when block.tableData changes externally (undo/redo, page reload)
+  useEffect(() => {
+    if (block.tableData) {
+      // Only update if the data is actually different (comparing JSON strings)
+      const currentData = JSON.stringify(tableData);
+      const newData = JSON.stringify(block.tableData);
+      if (currentData !== newData) {
+        setTableData(block.tableData);
+      }
+    }
+  }, [block.tableData]);
+
+  // Sync to parent - uses functional update to avoid stale state
   const syncToParent = useCallback(
     (data: TableData) => {
       setTableData(data);
@@ -177,12 +253,69 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
     setEditingColumnId(null);
   };
 
-  const addOptionToColumn = (colId: string, option: SelectOption) => {
-    const columns = tableData.columns.map((c) =>
-      c.id === colId ? { ...c, options: [...(c.options || []), option] } : c
-    );
-    syncToParent({ ...tableData, columns });
-  };
+  const addOptionToColumn = useCallback((colId: string, option: SelectOption) => {
+    setTableData(prev => {
+      const columns = prev.columns.map((c) =>
+        c.id === colId ? { ...c, options: [...(c.options || []), option] } : c
+      );
+      const newData = { ...prev, columns };
+      onUpdate({ ...block, tableData: newData });
+      return newData;
+    });
+  }, [block, onUpdate]);
+
+  const updateOptionInColumn = useCallback((colId: string, optionId: string, updates: Partial<SelectOption>) => {
+    setTableData(prev => {
+      const columns = prev.columns.map((c) =>
+        c.id === colId
+          ? {
+            ...c,
+            options: (c.options || []).map(opt =>
+              opt.id === optionId ? { ...opt, ...updates } : opt
+            )
+          }
+          : c
+      );
+      const newData = { ...prev, columns };
+      onUpdate({ ...block, tableData: newData });
+      return newData;
+    });
+  }, [block, onUpdate]);
+
+  const deleteOptionFromColumn = useCallback((colId: string, optionId: string) => {
+    setTableData(prev => {
+      const columns = prev.columns.map((c) =>
+        c.id === colId
+          ? { ...c, options: (c.options || []).filter(opt => opt.id !== optionId) }
+          : c
+      );
+      // Also clear cells that reference this option
+      const rows = prev.rows.map((r) => {
+        const cellValue = r.cells[colId];
+        if (cellValue === optionId) {
+          return { ...r, cells: { ...r.cells, [colId]: null } };
+        }
+        if (Array.isArray(cellValue)) {
+          return { ...r, cells: { ...r.cells, [colId]: cellValue.filter(v => v !== optionId) } };
+        }
+        return r;
+      });
+      const newData = { ...prev, columns, rows };
+      onUpdate({ ...block, tableData: newData });
+      return newData;
+    });
+  }, [block, onUpdate]);
+
+  const reorderOptionsInColumn = useCallback((colId: string, options: SelectOption[]) => {
+    setTableData(prev => {
+      const columns = prev.columns.map((c) =>
+        c.id === colId ? { ...c, options } : c
+      );
+      const newData = { ...prev, columns };
+      onUpdate({ ...block, tableData: newData });
+      return newData;
+    });
+  }, [block, onUpdate]);
 
   // ─── Row Operations ───────
 
@@ -215,14 +348,12 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
     const rows = [...tableData.rows];
     rows.splice(rowIndex + 1, 0, newRow);
     syncToParent({ ...tableData, rows });
-    setRowActionMenu(null);
   };
 
   const insertRowAt = (rowId: string, position: 'above' | 'below') => {
     const rowIndex = tableData.rows.findIndex(r => r.id === rowId);
     if (rowIndex === -1) return;
     addRow(position === 'above' ? rowIndex : rowIndex + 1);
-    setRowActionMenu(null);
   };
 
   const updateCell = (rowId: string, colId: string, value: CellValue) => {
@@ -563,6 +694,9 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
             options={col.options || []}
             onChange={(v) => updateCell(row.id, col.id, v)}
             onAddOption={(opt) => addOptionToColumn(col.id, opt)}
+            onUpdateOption={(optId, updates) => updateOptionInColumn(col.id, optId, updates)}
+            onDeleteOption={(optId) => deleteOptionFromColumn(col.id, optId)}
+            onReorderOptions={(opts) => reorderOptionsInColumn(col.id, opts)}
           />
         );
       case 'multi-select':
@@ -572,6 +706,9 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
             options={col.options || []}
             onChange={(v) => updateCell(row.id, col.id, v)}
             onAddOption={(opt) => addOptionToColumn(col.id, opt)}
+            onUpdateOption={(optId, updates) => updateOptionInColumn(col.id, optId, updates)}
+            onDeleteOption={(optId) => deleteOptionFromColumn(col.id, optId)}
+            onReorderOptions={(opts) => reorderOptionsInColumn(col.id, opts)}
             multi
           />
         );
@@ -597,29 +734,32 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
     { value: 'range', label: 'Range', numericOnly: true },
   ];
 
+  // Row action menu ref
+  const rowActionRefs = useRef<Map<string, HTMLElement>>(new Map());
+
   return (
     <div
       ref={tableRef}
-      className="my-4 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+      className="my-4 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm"
     >
       {/* Toolbar */}
-      <div className="flex items-center gap-1 px-3 py-2 bg-gray-50 dark:bg-gray-800/50
-                      border-b border-gray-200 dark:border-gray-700 flex-wrap">
+      <div className="flex items-center gap-1 px-3 py-2 bg-gray-50/80 dark:bg-gray-800/50
+                      border-b border-gray-200 dark:border-gray-700 flex-wrap backdrop-blur-sm">
         <button
           onClick={() => {
             const firstCol = tableData.columns[0];
             if (firstCol) toggleSort(firstCol.id);
           }}
-          className="flex items-center gap-1 px-2 py-1 text-xs rounded
-                     hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg
+                     hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 transition-colors"
         >
           <ArrowUpDown size={14} />
           <span>Sort</span>
         </button>
         <button
           onClick={addFilter}
-          className={`flex items-center gap-1 px-2 py-1 text-xs rounded
-                      hover:bg-gray-200 dark:hover:bg-gray-700
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg
+                      hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors
                       ${filters.length > 0
               ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
               : 'text-gray-600 dark:text-gray-400'}`}
@@ -633,8 +773,8 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
           <div className="relative">
             <button
               onClick={() => setShowHiddenColumnsMenu(!showHiddenColumnsMenu)}
-              className="flex items-center gap-1 px-2 py-1 text-xs rounded
-                         hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg
+                         hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 transition-colors"
             >
               <Eye size={14} />
               <span>{hiddenColumns.length} hidden</span>
@@ -642,14 +782,14 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
             </button>
 
             {showHiddenColumnsMenu && (
-              <div className="absolute top-full left-0 mt-1 z-50 min-w-[180px] bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 menu-animate">
+              <div className="absolute top-full left-0 mt-1 z-50 min-w-[180px] bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 menu-animate overflow-hidden">
                 <div className="p-1">
-                  <div className="text-xs text-gray-500 px-2 py-1">Hidden columns</div>
+                  <div className="text-xs text-gray-500 px-3 py-2 font-medium">Hidden columns</div>
                   {hiddenColumns.map(col => (
                     <button
                       key={col.id}
                       onClick={() => { showColumn(col.id); setShowHiddenColumnsMenu(false); }}
-                      className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-left"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-left transition-colors"
                     >
                       <Eye size={14} className="text-gray-400" />
                       <span className="dark:text-gray-300">{col.name}</span>
@@ -663,22 +803,22 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
 
         <div className="flex-1" />
 
-        <span className="text-xs text-gray-400">
+        <span className="text-xs text-gray-400 font-medium">
           {tableData.rows.length} rows · {visibleColumns.length} columns
         </span>
       </div>
 
       {/* Filter Panel */}
       {showFilterPanel && filters.length > 0 && (
-        <div className="px-3 py-2 bg-gray-50 dark:bg-gray-800/30 border-b
+        <div className="px-3 py-3 bg-gray-50/50 dark:bg-gray-800/30 border-b
                         border-gray-200 dark:border-gray-700 space-y-2">
           {filters.map((filter, i) => (
             <div key={i} className="flex items-center gap-2 flex-wrap">
               <select
                 value={filter.columnId}
                 onChange={(e) => updateFilter(i, { columnId: e.target.value })}
-                className="text-xs border border-gray-200 dark:border-gray-600 rounded px-2 py-1
-                           bg-white dark:bg-gray-800 dark:text-gray-200"
+                className="text-xs border border-gray-200 dark:border-gray-600 rounded-lg px-2.5 py-1.5
+                           bg-white dark:bg-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
               >
                 {tableData.columns.map((col) => (
                   <option key={col.id} value={col.id}>{col.name}</option>
@@ -687,8 +827,8 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
               <select
                 value={filter.operator}
                 onChange={(e) => updateFilter(i, { operator: e.target.value as TableFilter['operator'] })}
-                className="text-xs border border-gray-200 dark:border-gray-600 rounded px-2 py-1
-                           bg-white dark:bg-gray-800 dark:text-gray-200"
+                className="text-xs border border-gray-200 dark:border-gray-600 rounded-lg px-2.5 py-1.5
+                           bg-white dark:bg-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
               >
                 <option value="contains">Contains</option>
                 <option value="equals">Equals</option>
@@ -703,13 +843,13 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
                   value={filter.value}
                   onChange={(e) => updateFilter(i, { value: e.target.value })}
                   placeholder="Value..."
-                  className="text-xs border border-gray-200 dark:border-gray-600 rounded px-2 py-1
-                             flex-1 min-w-[100px] bg-white dark:bg-gray-800 dark:text-gray-200 outline-none"
+                  className="text-xs border border-gray-200 dark:border-gray-600 rounded-lg px-2.5 py-1.5
+                             flex-1 min-w-[100px] bg-white dark:bg-gray-800 dark:text-gray-200 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
                 />
               )}
               <button
                 onClick={() => removeFilter(i)}
-                className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+                className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
               >
                 <X size={12} className="text-gray-400" />
               </button>
@@ -717,7 +857,7 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
           ))}
           <button
             onClick={() => { setFilters([]); setShowFilterPanel(false); }}
-            className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+            className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
           >
             Clear all filters
           </button>
@@ -730,7 +870,7 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
           <thead>
             <tr className="bg-gray-50 dark:bg-gray-800/50">
               {/* Row handle column */}
-              <th className="w-8 min-w-[32px] border-b border-r border-gray-200 dark:border-gray-700" />
+              <th className="w-10 min-w-[40px] border-b border-r border-gray-200 dark:border-gray-700" />
 
               {visibleColumns.map((col, colIndex) => {
                 const Icon = getColumnIcon(col.type);
@@ -750,8 +890,8 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
                     style={{ width: col.width, minWidth: col.width }}
                   >
                     <div
-                      className="flex items-center gap-1 px-2 py-1.5 cursor-pointer
-                                 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      className="flex items-center gap-1.5 px-2 py-2 cursor-pointer
+                                 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                       onClick={(e) => {
                         if (editingColumnId === col.id) {
                           setEditingColumnId(null);
@@ -764,7 +904,7 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
                     >
                       <GripVertical
                         size={12}
-                        className="text-gray-300 dark:text-gray-600 opacity-0 group-hover:opacity-100 cursor-grab flex-shrink-0"
+                        className="text-gray-300 dark:text-gray-600 opacity-0 group-hover:opacity-100 cursor-grab flex-shrink-0 transition-opacity"
                       />
                       <Icon size={14} className="text-gray-400 flex-shrink-0" />
                       <span className="text-xs font-medium text-gray-600 dark:text-gray-300 truncate">
@@ -778,7 +918,7 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
                       <button
                         onClick={(e) => { e.stopPropagation(); toggleSort(col.id); }}
                         className="ml-auto opacity-0 group-hover:opacity-100 p-0.5 rounded
-                                   hover:bg-gray-200 dark:hover:bg-gray-600"
+                                   hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
                       >
                         <ArrowUpDown size={12} className="text-gray-400" />
                       </button>
@@ -799,7 +939,7 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
                       >
                         <ColumnHeaderMenu
                           column={col}
-                          onRename={(name) => { updateColumn(col.id, { name }); setEditingColumnId(null); }}
+                          onRename={(name) => { updateColumn(col.id, { name }); }}
                           onChangeType={(type) => changeColumnType(col.id, type)}
                           onDelete={() => deleteColumn(col.id)}
                           onDuplicate={() => duplicateColumn(col.id)}
@@ -811,6 +951,16 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
                           currentSort={sort?.columnId === col.id ? sort.direction : null}
                           canDelete={visibleColumns.length > 1}
                           onClose={() => setEditingColumnId(null)}
+                          onUpdateOptions={(options) => {
+                            setTableData(prev => {
+                              const columns = prev.columns.map(c =>
+                                c.id === col.id ? { ...c, options } : c
+                              );
+                              const newData = { ...prev, columns };
+                              onUpdate({ ...block, tableData: newData });
+                              return newData;
+                            });
+                          }}
                         />
                       </TablePortal>
                     )}
@@ -819,11 +969,11 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
               })}
 
               {/* Add column button */}
-              <th className="border-b border-gray-200 dark:border-gray-700 w-8 min-w-[32px]">
+              <th className="border-b border-gray-200 dark:border-gray-700 w-10 min-w-[40px]">
                 <button
                   onClick={() => addColumn()}
-                  className="w-full h-full flex items-center justify-center py-1.5
-                             hover:bg-gray-100 dark:hover:bg-gray-700"
+                  className="w-full h-full flex items-center justify-center py-2
+                             hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   title="Add a column"
                 >
                   <Plus size={14} className="text-gray-400" />
@@ -849,61 +999,35 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
                 >
                   {/* Row handle */}
                   <td className="border-b border-r border-gray-200 dark:border-gray-700 relative">
-                    <div className="flex items-center justify-center h-full py-1">
+                    <div
+                      ref={(el) => {
+                        if (el) rowActionRefs.current.set(row.id, el);
+                        else rowActionRefs.current.delete(row.id);
+                      }}
+                      className="flex items-center justify-center h-full py-1.5"
+                    >
                       <GripVertical
                         size={12}
-                        className="text-gray-300 dark:text-gray-600 opacity-0 group-hover/row:opacity-100 cursor-grab"
+                        className="text-gray-300 dark:text-gray-600 opacity-0 group-hover/row:opacity-100 cursor-grab transition-opacity"
                       />
-                      <span className="text-[10px] text-gray-400 absolute group-hover/row:hidden">
+                      <span className="text-[10px] text-gray-400 absolute group-hover/row:hidden font-medium">
                         {rowIndex + 1}
                       </span>
                     </div>
 
                     {/* Row action menu trigger */}
                     <button
-                      onClick={() => setRowActionMenu(rowActionMenu === row.id ? null : row.id)}
+                      onClick={(e) => {
+                        const target = e.currentTarget.parentElement;
+                        if (target) {
+                          setRowActionMenu(rowActionMenu?.rowId === row.id ? null : { rowId: row.id, element: target });
+                        }
+                      }}
                       className="hidden group-hover/row:flex items-center justify-center
-                                 w-full h-full absolute inset-0 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                 w-full h-full absolute inset-0 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                     >
                       <MoreHorizontal size={12} className="text-gray-400" />
                     </button>
-
-                    {/* Row action menu */}
-                    {rowActionMenu === row.id && (
-                      <div className="absolute left-full top-0 ml-1 z-50 min-w-[160px] bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 menu-animate">
-                        <div className="p-1">
-                          <button
-                            onClick={() => insertRowAt(row.id, 'above')}
-                            className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-left"
-                          >
-                            <ArrowUp size={14} className="text-gray-400" />
-                            <span className="dark:text-gray-300">Insert above</span>
-                          </button>
-                          <button
-                            onClick={() => insertRowAt(row.id, 'below')}
-                            className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-left"
-                          >
-                            <ArrowDown size={14} className="text-gray-400" />
-                            <span className="dark:text-gray-300">Insert below</span>
-                          </button>
-                          <button
-                            onClick={() => duplicateRow(row.id)}
-                            className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-left"
-                          >
-                            <Copy size={14} className="text-gray-400" />
-                            <span className="dark:text-gray-300">Duplicate</span>
-                          </button>
-                          <div className="my-1 border-t border-gray-100 dark:border-gray-700" />
-                          <button
-                            onClick={() => { deleteRow(row.id); setRowActionMenu(null); }}
-                            className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500 text-left"
-                          >
-                            <Trash2 size={14} />
-                            <span>Delete row</span>
-                          </button>
-                        </div>
-                      </div>
-                    )}
                   </td>
 
                   {/* Cells */}
@@ -938,7 +1062,7 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
                 {visibleColumns.map((col) => (
                   <td
                     key={col.id}
-                    className="border-t border-r border-gray-200 dark:border-gray-700 px-2 py-1"
+                    className="border-t border-r border-gray-200 dark:border-gray-700 px-2 py-1.5"
                     style={{ width: col.width, minWidth: col.width, maxWidth: col.width }}
                   >
                     <span className="text-xs text-gray-500 font-medium">
@@ -958,7 +1082,7 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
         {/* Add row */}
         <button
           onClick={() => addRow()}
-          className="flex-1 flex items-center gap-2 px-3 py-2 text-sm text-gray-500
+          className="flex-1 flex items-center gap-2 px-4 py-2.5 text-sm text-gray-500
                      hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors"
         >
           <Plus size={14} />
@@ -969,7 +1093,7 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
         <div className="relative">
           <button
             onClick={() => setShowCalcMenu(showCalcMenu ? null : 'menu')}
-            className="flex items-center gap-1 px-3 py-2 text-sm text-gray-500
+            className="flex items-center gap-1.5 px-4 py-2.5 text-sm text-gray-500
                        hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors border-l border-gray-100 dark:border-gray-800"
           >
             <Calculator size={14} />
@@ -977,11 +1101,11 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
           </button>
 
           {showCalcMenu && (
-            <div className="absolute bottom-full right-0 mb-1 z-50 min-w-[280px] max-h-[300px] overflow-auto bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 menu-animate">
+            <div className="absolute bottom-full right-0 mb-1 z-50 min-w-[300px] max-h-[320px] overflow-auto bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 menu-animate">
               <div className="p-2">
-                <div className="text-xs text-gray-500 px-2 py-1 uppercase tracking-wide">Column calculations</div>
+                <div className="text-xs text-gray-500 px-3 py-2 uppercase tracking-wide font-medium">Column calculations</div>
                 {visibleColumns.map(col => (
-                  <div key={col.id} className="flex items-center gap-2 px-2 py-1">
+                  <div key={col.id} className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
                     <span className="text-sm text-gray-600 dark:text-gray-300 truncate flex-1">{col.name}</span>
                     <select
                       value={columnCalculations[col.id] || 'none'}
@@ -989,8 +1113,8 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
                         ...prev,
                         [col.id]: e.target.value as CalculationType
                       }))}
-                      className="text-xs border border-gray-200 dark:border-gray-600 rounded px-2 py-1
-                                 bg-white dark:bg-gray-800 dark:text-gray-200"
+                      className="text-xs border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5
+                                 bg-white dark:bg-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500/20 outline-none"
                     >
                       {calculationOptions
                         .filter(opt => !opt.numericOnly || col.type === 'number')
@@ -1006,6 +1130,19 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
           )}
         </div>
       </div>
+
+      {/* Row Action Menu Portal */}
+      {rowActionMenu && (
+        <RowActionMenu
+          rowId={rowActionMenu.rowId}
+          triggerRef={{ current: rowActionMenu.element }}
+          onInsertAbove={() => insertRowAt(rowActionMenu.rowId, 'above')}
+          onInsertBelow={() => insertRowAt(rowActionMenu.rowId, 'below')}
+          onDuplicate={() => duplicateRow(rowActionMenu.rowId)}
+          onDelete={() => deleteRow(rowActionMenu.rowId)}
+          onClose={() => setRowActionMenu(null)}
+        />
+      )}
     </div>
   );
 }
