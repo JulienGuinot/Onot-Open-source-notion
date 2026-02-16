@@ -75,4 +75,3 @@ export function TablePortal({ children, onClose, triggerRef, className = '' }: T
         document.body
     );
 }
-

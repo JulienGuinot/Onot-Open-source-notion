@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { ColumnType, TableColumn } from "../../../types/types";
+import { ColumnType, TableColumn } from "@/lib/types";
 import { getColumnIcon } from "./utils";
 import { Trash2 } from "lucide-react";
 

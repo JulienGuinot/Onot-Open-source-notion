@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Page, Block, BlockType } from '@/lib/types'
 import BlockEditor from '@/components/blocks/BlockEditor'
+import EmojiPicker from '@/components/EmojiPicker'
 
 interface PageEditorProps {
     page: Page
@@ -114,7 +115,7 @@ export default function PageEditor({
         // You could add a toast notification here
     }
 
-    const handleMergeUp = (blockId: string, index: number) => {
+    const handleMergeUp = (index: number) => {
         if (index === 0) return
 
         const currentBlock = page.blocks[index]
@@ -155,8 +156,18 @@ export default function PageEditor({
                 </div>
             )}
 
-            {/* Page Title */}
+            {/* Page Icon and Title */}
             <div className="px-8 pt-8 pb-4">
+                <EmojiPicker
+                    currentEmoji={page.icon}
+                    onSelect={(emoji) =>
+                        onUpdatePage({
+                            ...page,
+                            icon: emoji,
+                            updatedAt: Date.now(),
+                        })
+                    }
+                />
                 <input
                     type="text"
                     value={page.title}
@@ -169,7 +180,7 @@ export default function PageEditor({
                     }
                     placeholder="Untitled"
                     className="text-4xl font-bold outline-none w-full bg-transparent
-                     dark:text-gray-100 text-gray-900 transition-colors"
+                     dark:text-gray-100 text-gray-900 transition-colors mt-4"
                 />
             </div>
 
@@ -243,7 +254,7 @@ export default function PageEditor({
                             isDragging={draggedBlockId === block.id}
                             onChangeType={(newType) => handleChangeBlockType(block.id, newType)}
                             onCopyLink={() => handleCopyLink(block.id)}
-                            onMergeUp={() => handleMergeUp(block.id, index)}
+                            onMergeUp={() => handleMergeUp(index)}
                         />
                     </div>
                 ))}

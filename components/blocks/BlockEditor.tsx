@@ -5,6 +5,10 @@ import { Block } from '@/lib/types'
 import { GripVertical } from 'lucide-react'
 import ContextMenu from '@/components/ContextMenu'
 import { SlashMenu } from '@/components/SlashMenu'
+import ToggleBlock from '@/components/blocks/ToggleBlock'
+import CalloutBlock from '@/components/blocks/CalloutBlock'
+import ImageBlock from '@/components/blocks/ImageBlock'
+import TableBlock from '@/components/table/TableBlock'
 
 export interface BlockEditorProps {
     block: Block
@@ -295,6 +299,14 @@ export default function BlockEditor({
                     </label>
                 ) : block.type === 'divider' ? (
                     <div className="my-4 border-t border-gray-200 dark:border-gray-700" />
+                ) : block.type === 'toggle' ? (
+                    <ToggleBlock block={block} onUpdate={onUpdate} />
+                ) : block.type === 'callout' ? (
+                    <CalloutBlock block={block} onUpdate={onUpdate} />
+                ) : block.type === 'image' ? (
+                    <ImageBlock block={block} onUpdate={onUpdate} />
+                ) : block.type === 'table' ? (
+                    <TableBlock block={block} onUpdate={onUpdate} />
                 ) : (
                     <textarea
                         ref={inputRef}
@@ -345,7 +357,7 @@ export default function BlockEditor({
                         // Change block type and clear content (removing the slash)
                         setShowSlashMenu(false)
                         onChangeType?.(type)
-                        onUpdate({ ...block, content: '', type })
+                        onUpdate({ ...block, content: '', type: type as Block['type'] })
                     }}
                 />
             )}
