@@ -5,6 +5,8 @@ import Sidebar from '@/components/Sidebar'
 import SearchModal from '@/components/SearchModal'
 import KeyboardShortcutsModal from '@/components/KeyboardShortcutsModal'
 import { Page } from '@/lib/types'
+import { generateId } from '@/lib/utils'
+import { createBlock } from '@/lib/blockUtils'
 import { PanelLeft, LogIn, LogOut } from 'lucide-react'
 import Link from 'next/link'
 import { useWorkspace } from '@/providers/WorkspaceProvider'
@@ -92,15 +94,9 @@ export default function Home() {
     const createPage = (parentId: string | null = null) => {
         if (!workspace) return
         const newPage: Page = {
-            id: `page-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+            id: generateId('page'),
             title: '',
-            blocks: [
-                {
-                    id: `block-${Date.now()}`,
-                    type: 'text',
-                    content: '',
-                },
-            ],
+            blocks: [createBlock('text', '')],
             parentId,
             createdAt: Date.now(),
             updatedAt: Date.now(),
@@ -235,7 +231,7 @@ export default function Home() {
 
                     {user ? (
                         <>
-                            <div className="text-sm text-blue-600 bg-blue-500/10 dark:bg-blue-500/20  dark:text-gray-400 border border-blue-500 rounded-lg p-2">{user.email}</div>
+                            <div className="text-sm text-blue-600 bg-blue-500/10 dark:bg-zinc-700/30  dark:text-gray-400 rounded-lg px-2 py-0.5">{user.email}</div>
                             <button
                                 onClick={() => signOut()}
                                 className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"

@@ -54,7 +54,7 @@ export function TextCell({ value, onChange }: TextCellProps) {
     return (
         <div
             onClick={() => setIsEditing(true)}
-            className="w-full px-2 py-1.5 min-h-[32px] text-sm cursor-text dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+            className="w-full px-2 py-1.5 min-h-[32px] text-sm cursor-text dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-zinc-700/50 transition-colors"
         >
             {value || <span className="text-gray-400">Empty</span>}
         </div>

@@ -7,6 +7,7 @@ import EmojiPicker from '@/components/EmojiPicker'
 import { useHistory } from '@/lib/useHistory'
 import { Undo2, Redo2, Copy, Scissors, ClipboardPaste } from 'lucide-react'
 import {
+    createBlock,
     deepDuplicateBlock,
     blocksToPlainText,
     plainTextToBlocks,
@@ -91,11 +92,8 @@ export default function PageEditor({
 
     const handleAddBlock = useCallback((index: number, initialContent: string = '', blockType: BlockType = 'text') => {
         const newBlock: Block = {
-            id: `block-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-            type: blockType,
-            content: initialContent,
+            ...createBlock(blockType, initialContent),
             autoFocus: true,
-            checked: blockType === 'todo' ? false : undefined,
         }
         const newBlocks = [...page.blocks]
         newBlocks.splice(index + 1, 0, newBlock)

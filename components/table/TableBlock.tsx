@@ -9,7 +9,8 @@ import {
 } from 'lucide-react';
 import { UrlCell } from './cells/UrlCell';
 import { SelectCell } from './cells/SelectCell';
-import { createDefaultTable, generateId, getColumnIcon } from './utils';
+import { generateId } from '@/lib/utils';
+import { createDefaultTable, getColumnIcon } from './utils';
 import { TextCell } from './cells/TextCell';
 import { NumberCell } from './cells/NumberCell';
 import { DateCell } from './cells/DateCell';
@@ -740,7 +741,7 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
   return (
     <div
       ref={tableRef}
-      className="my-4 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700 bg-white dark:bg-zinc-800 shadow-sm"
+      className="my-4 rounded-xl overflow-hidden border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 shadow-sm"
     >
       {/* Toolbar */}
       <div className="flex items-center gap-1 px-3 py-2 bg-gray-50/80 dark:bg-zinc-800/50
@@ -782,14 +783,14 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
             </button>
 
             {showHiddenColumnsMenu && (
-              <div className="absolute top-full left-0 mt-1 z-50 min-w-[180px] bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 menu-animate overflow-hidden">
+              <div className="absolute top-full left-0 mt-1 z-50 min-w-[180px] bg-white dark:bg-zinc-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 menu-animate overflow-hidden">
                 <div className="p-1">
                   <div className="text-xs text-gray-500 px-3 py-2 font-medium">Hidden columns</div>
                   {hiddenColumns.map(col => (
                     <button
                       key={col.id}
                       onClick={() => { showColumn(col.id); setShowHiddenColumnsMenu(false); }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-left transition-colors"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 text-left transition-colors"
                     >
                       <Eye size={14} className="text-gray-400" />
                       <span className="dark:text-gray-300">{col.name}</span>
@@ -810,7 +811,7 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
 
       {/* Filter Panel */}
       {showFilterPanel && filters.length > 0 && (
-        <div className="px-3 py-3 bg-gray-50/50 dark:bg-gray-800/30 border-b
+        <div className="px-3 py-3 bg-gray-50/50 dark:bg-zinc-800/30 border-b
                         border-gray-200 dark:border-gray-700 space-y-2">
           {filters.map((filter, i) => (
             <div key={i} className="flex items-center gap-2 flex-wrap">
@@ -818,7 +819,7 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
                 value={filter.columnId}
                 onChange={(e) => updateFilter(i, { columnId: e.target.value })}
                 className="text-xs border border-gray-200 dark:border-gray-600 rounded-lg px-2.5 py-1.5
-                           bg-white dark:bg-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                           bg-white dark:bg-zinc-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
               >
                 {tableData.columns.map((col) => (
                   <option key={col.id} value={col.id}>{col.name}</option>
@@ -828,7 +829,7 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
                 value={filter.operator}
                 onChange={(e) => updateFilter(i, { operator: e.target.value as TableFilter['operator'] })}
                 className="text-xs border border-gray-200 dark:border-gray-600 rounded-lg px-2.5 py-1.5
-                           bg-white dark:bg-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
+                           bg-white dark:bg-zinc-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
               >
                 <option value="contains">Contains</option>
                 <option value="equals">Equals</option>
@@ -843,13 +844,13 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
                   value={filter.value}
                   onChange={(e) => updateFilter(i, { value: e.target.value })}
                   placeholder="Value..."
-                  className="text-xs border border-gray-200 dark:border-gray-600 rounded-lg px-2.5 py-1.5
-                             flex-1 min-w-[100px] bg-white dark:bg-gray-800 dark:text-gray-200 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
+                  className="text-xs border border-gray-200 dark:border-zinc-600 rounded-lg px-2.5 py-1.5
+                             flex-1 min-w-[100px] bg-white dark:bg-zinc-800 dark:text-gray-200 outline-none focus:ring-2 focus:ring-blue-500/20 transition-all"
                 />
               )}
               <button
                 onClick={() => removeFilter(i)}
-                className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                className="p-1.5 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-lg transition-colors"
               >
                 <X size={12} className="text-gray-400" />
               </button>
@@ -868,9 +869,9 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
       <div className="overflow-x-auto table-scroll">
         <table className="w-full border-collapse">
           <thead>
-            <tr className="bg-gray-50 dark:bg-gray-800/50">
+            <tr className="bg-gray-50 dark:bg-zinc-800/50">
               {/* Row handle column */}
-              <th className="w-10 min-w-[40px] border-b border-r border-gray-200 dark:border-gray-700" />
+              <th className="w-10 min-w-[40px] border-b border-r border-gray-200 dark:border-zinc-700" />
 
               {visibleColumns.map((col, colIndex) => {
                 const Icon = getColumnIcon(col.type);
@@ -891,7 +892,7 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
                   >
                     <div
                       className="flex items-center gap-1.5 px-2 py-2 cursor-pointer
-                                 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                 hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
                       onClick={(e) => {
                         if (editingColumnId === col.id) {
                           setEditingColumnId(null);
@@ -993,7 +994,7 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
                   onDragStart={(e) => handleRowDragStart(row.id, rowIndex, e)}
                   onDragOver={(e) => handleRowDragOver(rowIndex, e)}
                   onDragEnd={handleRowDragEnd}
-                  className={`group/row hover:bg-gray-50 dark:hover:bg-gray-800/30 table-row-hover
+                  className={`group/row hover:bg-gray-50 dark:hover:bg-zinc-600/30 table-row-hover
                              ${isDragTarget ? 'bg-blue-50 dark:bg-blue-900/20 drag-indicator-top relative' : ''}
                              ${dragState.id === row.id ? 'opacity-50' : ''}`}
                 >
@@ -1057,12 +1058,12 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
           {/* Calculations footer */}
           {Object.values(columnCalculations).some(v => v !== 'none') && (
             <tfoot>
-              <tr className="bg-gray-50 dark:bg-gray-800/30">
-                <td className="border-t border-gray-200 dark:border-gray-700" />
+              <tr className="bg-gray-50 dark:bg-zinc-800/30">
+                <td className="border-t border-gray-200 dark:border-zinc-700" />
                 {visibleColumns.map((col) => (
                   <td
                     key={col.id}
-                    className="border-t border-r border-gray-200 dark:border-gray-700 px-2 py-1.5"
+                    className="border-t border-r border-gray-200 dark:border-zinc-700 px-2 py-1.5"
                     style={{ width: col.width, minWidth: col.width, maxWidth: col.width }}
                   >
                     <span className="text-xs text-gray-500 font-medium">
@@ -1070,7 +1071,7 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
                     </span>
                   </td>
                 ))}
-                <td className="border-t border-gray-200 dark:border-gray-700" />
+                <td className="border-t border-gray-200 dark:border-zinc-700" />
               </tr>
             </tfoot>
           )}
@@ -1078,12 +1079,12 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
       </div>
 
       {/* Footer actions */}
-      <div className="flex items-center border-t border-gray-100 dark:border-gray-800">
+      <div className="flex items-center border-t border-gray-100 dark:border-zinc-800">
         {/* Add row */}
         <button
           onClick={() => addRow()}
           className="flex-1 flex items-center gap-2 px-4 py-2.5 text-sm text-gray-500
-                     hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors"
+                     hover:bg-gray-50 dark:hover:bg-zinc-800/30 transition-colors"
         >
           <Plus size={14} />
           <span>New row</span>
@@ -1094,18 +1095,25 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
           <button
             onClick={() => setShowCalcMenu(showCalcMenu ? null : 'menu')}
             className="flex items-center gap-1.5 px-4 py-2.5 text-sm text-gray-500
-                       hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors border-l border-gray-100 dark:border-gray-800"
+                       hover:bg-gray-50 dark:hover:bg-zinc-800/30 transition-colors border-l border-gray-100 dark:border-zinc-800"
           >
             <Calculator size={14} />
             <span>Calculate</span>
           </button>
 
           {showCalcMenu && (
-            <div className="absolute bottom-full right-0 mb-1 z-50 min-w-[300px] max-h-[320px] overflow-auto bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 menu-animate">
+            <div className="absolute bottom-full right-0 mb-1 z-50 min-w-[300px] max-h-[320px] overflow-auto bg-white dark:bg-zinc-800 rounded-xl shadow-2xl border border-gray-200 dark:border-zinc-700 menu-animate">
               <div className="p-2">
-                <div className="text-xs text-gray-500 px-3 py-2 uppercase tracking-wide font-medium">Column calculations</div>
+                <div className='flex justify-between items-center'>
+                  <div className="text-xs text-gray-500 px-3 py-2 uppercase tracking-wide font-medium">Column calculations</div>
+                  <X
+                    onClick={() => setShowCalcMenu(null)}
+                    size={14}
+                    className='bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-700 dark:hover:bg-zinc-600 rounded-lg text-sm'
+                  />
+                </div>
                 {visibleColumns.map(col => (
-                  <div key={col.id} className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                  <div key={col.id} className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-700/50">
                     <span className="text-sm text-gray-600 dark:text-gray-300 truncate flex-1">{col.name}</span>
                     <select
                       value={columnCalculations[col.id] || 'none'}
@@ -1114,7 +1122,7 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
                         [col.id]: e.target.value as CalculationType
                       }))}
                       className="text-xs border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1.5
-                                 bg-white dark:bg-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500/20 outline-none"
+                                 bg-white dark:bg-zinc-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500/20 outline-none"
                     >
                       {calculationOptions
                         .filter(opt => !opt.numericOnly || col.type === 'number')

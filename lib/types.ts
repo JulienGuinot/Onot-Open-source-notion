@@ -14,7 +14,8 @@ export type BlockType =
     | 'toggle'
     | 'callout'
     | 'image'
-    | 'table';
+    | 'table'
+    | 'youtube'
 
 // ─── Table / Database Types ───────────────────────────────────
 
@@ -123,6 +124,8 @@ export interface Block {
     // Image specific
     imageUrl?: string;
     imageCaption?: string;
+    // YouTube specific
+    youtubeUrl?: string;
     // UI state
     autoFocus?: boolean;
 }

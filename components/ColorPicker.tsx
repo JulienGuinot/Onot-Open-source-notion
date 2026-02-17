@@ -39,13 +39,13 @@ export default function ColorPicker({ style, onChange, onClose }: ColorPickerPro
     return (
         <div
             ref={ref}
-            className="absolute left-16 top-full mt-1 bg-white dark:bg-gray-800
-                 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg
+            className="absolute left-16 top-full mt-1 bg-white dark:bg-zinc-800
+                 border border-zinc-200 dark:border-zinc-700 rounded-lg shadow-lg
                  z-20 w-56 p-2"
         >
             {/* Text Colors */}
             <div className="mb-2">
-                <div className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-1 mb-1">
+                <div className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider px-1 mb-1">
                     Color
                 </div>
                 <div className="grid grid-cols-5 gap-1">
@@ -54,7 +54,7 @@ export default function ColorPicker({ style, onChange, onClose }: ColorPickerPro
                             key={key}
                             onClick={() => onChange({ ...style, color: key })}
                             className={`flex items-center justify-center w-8 h-8 rounded
-                         hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors
+                         hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors
                          ${style?.color === key ? 'ring-2 ring-blue-500' : ''}`}
                             title={colorLabels[key]}
                         >

@@ -5,12 +5,13 @@
  */
 
 import { Block, BlockType, Page } from './types'
+import { generateId } from './utils'
 
 /**
  * Creates a new block with proper initialization
  */
 export const createBlock = (type: BlockType = 'text', content: string = ''): Block => ({
-    id: `block-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    id: generateId('block'),
     type,
     content,
     checked: type === 'todo' ? false : undefined,
@@ -21,7 +22,7 @@ export const createBlock = (type: BlockType = 'text', content: string = ''): Blo
  */
 export const duplicateBlock = (block: Block): Block => ({
     ...block,
-    id: `block-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    id: generateId('block'),
 })
 
 /**
@@ -127,6 +128,7 @@ export const getBlockTypeName = (type: BlockType): string => {
         'callout': 'Callout',
         'image': 'Image',
         'table': 'Table',
+        'youtube': 'YouTube',
     }
     return typeNames[type] || type
 }
@@ -150,6 +152,7 @@ export const getBlockPlaceholder = (type: BlockType): string => {
         'callout': 'Callout text...',
         'image': '',
         'table': '',
+        'youtube': 'Paste a YouTube URL...',
     }
     return placeholders[type] || ''
 }
@@ -188,6 +191,7 @@ export const getRecommendedNextType = (currentType: BlockType): BlockType => {
         'callout': 'text',
         'image': 'text',
         'table': 'text',
+        'youtube': 'text',
     }
     return recommendations[currentType] || 'text'
 }
@@ -315,7 +319,7 @@ export const getPageBlockStats = (
 export const deepDuplicateBlock = (block: Block): Block => {
     const newBlock: Block = {
         ...block,
-        id: `block-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        id: generateId('block'),
         autoFocus: false,
     }
     if (newBlock.children && newBlock.children.length > 0) {
@@ -362,6 +366,7 @@ export const blocksToPlainText = (blocks: Block[]): string => {
             case 'callout': text = `${block.calloutIcon || '💡'} ${block.content}`; break
             case 'image': text = block.imageUrl || '[Image]'; break
             case 'table': text = '[Table]'; break
+            case 'youtube': text = block.youtubeUrl || '[YouTube]'; break
             default: text = block.content; break
         }
         if (block.children && block.children.length > 0) {

@@ -1,9 +1,6 @@
 import { TableData, ColumnType } from '@/lib/types'
+import { generateId } from '@/lib/utils'
 import { Type, Hash, Calendar, CheckSquare, Link, List, ListChecks } from 'lucide-react'
-
-export function generateId(): string {
-    return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
-}
 
 export function createDefaultTable(): TableData {
     return {

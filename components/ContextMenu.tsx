@@ -307,7 +307,7 @@ export default function ContextMenu({
                         ${selectedIndex === index && !item.disabled
                             ? item.destructive
                                 ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
-                                : 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+                                : 'bg-blue-50 dark:bg-zinc-900/20 text-blue-700 dark:text-blue-300'
                             : item.destructive
                                 ? 'text-red-600 dark:text-red-400'
                                 : 'text-gray-700 dark:text-gray-300'
@@ -324,17 +324,17 @@ export default function ContextMenu({
                     </span>
                     <span className="flex-1 font-medium">{item.label}</span>
                     {item.shortcut && (
-                        <kbd className={`ml-auto text-[10px] px-1.5 py-0.5 rounded
+                        <kbd className={`ml-auto text-[12px] px-1.5 py-1 rounded
                             ${item.destructive
                                 ? 'bg-red-100 dark:bg-red-900/30 text-red-500'
-                                : 'bg-gray-100 dark:bg-gray-700 text-gray-500'
+                                : 'bg-gray-100 dark:bg-zinc-700  text-zinc-700 dark:text-blue-500'
                             }
                         `}>
                             {item.shortcut}
                         </kbd>
                     )}
                     {item.submenu && (
-                        <ChevronRight size={14} className="ml-1 flex-shrink-0 text-gray-400" />
+                        <ChevronRight size={14} className="ml-1 flex-shrink-0 text-zinc-400" />
                     )}
                 </button>
 
@@ -352,7 +352,7 @@ export default function ContextMenu({
                             }}
                         />
                         <div
-                            className="absolute left-full top-0 ml-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700
+                            className="absolute left-full top-0 ml-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700
                                 rounded-xl shadow-2xl z-[60] py-2 min-w-48 max-h-80 overflow-y-auto menu-animate"
                             onMouseEnter={() => {
                                 if (submenuTimeoutRef.current) {
@@ -406,7 +406,7 @@ export default function ContextMenu({
     return (
         <div
             ref={menuRef}
-            className="fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 
+            className="fixed bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 
                  rounded-xl shadow-2xl z-50 py-2 min-w-56 menu-animate"
             style={{
                 left: x,
