@@ -595,7 +595,7 @@ export default function BlockEditor({
             >
                 <button
                     onClick={(e) => { e.stopPropagation(); onEnter() }}
-                    className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                    className="p-1 rounded hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
                     title="Add block below"
                 >
                     <Plus size={14} className="text-gray-400 dark:text-gray-500" />
@@ -605,7 +605,7 @@ export default function BlockEditor({
                     onDragStart={handleDragStartEvent}
                     onDragEnd={handleDragEndEvent}
                     onClick={handleContextMenu}
-                    className="cursor-grab active:cursor-grabbing p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                    className="cursor-grab active:cursor-grabbing p-1 rounded hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
                     title="Drag to move block"
                 >
                     <GripVertical size={14} className="text-gray-400 dark:text-gray-500" />

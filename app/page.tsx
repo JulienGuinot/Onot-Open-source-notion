@@ -7,7 +7,7 @@ import KeyboardShortcutsModal from '@/components/KeyboardShortcutsModal'
 import { Page } from '@/lib/types'
 import { generateId } from '@/lib/utils'
 import { createBlock } from '@/lib/blockUtils'
-import { PanelLeft, LogIn, LogOut } from 'lucide-react'
+import { PanelLeft, LogIn, LogOut, ChevronDown, ChevronUp } from 'lucide-react'
 import Link from 'next/link'
 import { useWorkspace } from '@/providers/WorkspaceProvider'
 import PageEditor from '@/components/pages/PageEditor'
@@ -16,6 +16,7 @@ import { useAuth } from '@/providers/AuthProvider'
 export default function Home() {
     const [currentPageId, setCurrentPageId] = useState<string | null>(null)
     const [expandedPages, setExpandedPages] = useState<Set<string>>(new Set())
+    const [emailClicked, setEmailClicked] = useState(false)
     const [showSearch, setShowSearch] = useState(false)
     const [showShortcuts, setShowShortcuts] = useState(false)
     const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -83,7 +84,7 @@ export default function Home() {
 
     if (workspaceLoading) {
         return (
-            <div className="flex h-screen items-center justify-center bg-white dark:bg-gray-900">
+            <div className="flex h-screen items-center justify-center bg-white dark:bg-zinc-900">
                 <div className="text-gray-600 dark:text-gray-400">Loading workspace...</div>
             </div>
         )
@@ -231,14 +232,24 @@ export default function Home() {
 
                     {user ? (
                         <>
-                            <div className="text-sm text-blue-600 bg-blue-500/10 dark:bg-zinc-700/30  dark:text-gray-400 rounded-lg px-2 py-0.5">{user.email}</div>
-                            <button
-                                onClick={() => signOut()}
-                                className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                            >
-                                <LogOut size={14} />
-                                Sign out
-                            </button>
+                            <div onClick={() => setEmailClicked(!emailClicked)} className="flex text-sm text-blue-600 bg-blue-500/10 dark:bg-zinc-700/30 cursor-pointer  dark:text-gray-400 rounded-lg px-2 py-0.5">
+                                {user.email} {emailClicked ? <ChevronUp /> : ""}
+
+                                {emailClicked &&
+                                    <button
+                                        onClick={() => signOut()}
+                                        className="mt-2 absolute top-10 flex items-center gap-1.5  py-1.5 px-3 bg-zinc-700 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-red-500 rounded-lg transition-colors"
+                                    >
+                                        <LogOut size={14} />
+                                        Sign out
+                                    </button>
+
+                                }
+                            </div>
+
+
+
+
                         </>
                     ) : (
                         <Link

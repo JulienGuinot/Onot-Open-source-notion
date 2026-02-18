@@ -29,7 +29,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     const [workspace, setWorkspaceState] = useState<WorkspaceData | null>(null)
     const [loading, setLoading] = useState(true)
     const [syncing, setSyncing] = useState(false)
-    
+
     const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     const lastSyncedRef = useRef<string | null>(null)
 
@@ -38,7 +38,9 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         if (authLoading) return
 
         const loadData = async () => {
-            setLoading(true)
+            if (!workspace) {
+                setLoading(true)
+            }
             try {
                 if (user && !isGuest) {
                     // Authenticated user: try cloud first, fallback to local
@@ -77,7 +79,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         // If authenticated, also sync to cloud with debounce
         if (user && !isGuest) {
             const currentData = JSON.stringify(ws)
-            
+
             // Skip if data hasn't changed
             if (currentData === lastSyncedRef.current) return
 
@@ -117,7 +119,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     // Manual sync trigger
     const syncNow = useCallback(async () => {
         if (!workspace || !user || isGuest) return
-        
+
         if (syncTimeoutRef.current) {
             clearTimeout(syncTimeoutRef.current)
         }

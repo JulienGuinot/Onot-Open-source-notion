@@ -47,7 +47,7 @@ export default function ToggleBlock({ block, onUpdate, onKeyDown, autoFocus }: T
         <div className="flex items-start gap-1">
             <button
                 onClick={toggleOpen}
-                className="mt-0.5 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200"
+                className="mt-0.5 p-1 rounded hover:bg-gray-100 dark:hover:bg-zinc-700 transition-all duration-200"
                 tabIndex={-1}
             >
                 <ChevronRight

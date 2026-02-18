@@ -59,7 +59,7 @@ export default function EmojiPicker({ currentEmoji, onSelect }: EmojiPickerProps
         <div className="relative" ref={pickerRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="group flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="group flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-700 transition-colors"
                 title="Change icon"
             >
                 {currentEmoji ? (
@@ -67,9 +67,7 @@ export default function EmojiPicker({ currentEmoji, onSelect }: EmojiPickerProps
                 ) : (
                     <Smile size={48} className="text-gray-300 dark:text-gray-600" />
                 )}
-                <span className="text-xs text-gray-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                    Add icon
-                </span>
+
             </button>
 
             {isOpen && (
