@@ -1,24 +1,27 @@
 "use client"
 
 import React, { createContext, useContext, useEffect, useState, useMemo, useRef, useCallback } from "react"
-import { WorkspaceData } from "@/lib/types"
+import { WorkspaceData, AppData } from "@/lib/types"
 import { useAuth } from "./AuthProvider"
-import { loadWorkspace, saveWorkspace } from "@/lib/storage"
-import { fetchWorkspace, saveWorkspaceToCloud } from "@/lib/supabase"
+import { loadAppData, saveAppData, createEmptyWorkspace } from "@/lib/storage"
+import { fetchAppData, saveAppDataToCloud } from "@/lib/supabase"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type WorkspaceContextValue = {
     workspace: WorkspaceData | null
+    workspaces: WorkspaceData[]
     loading: boolean
     syncing: boolean
     setWorkspace: (workspace: WorkspaceData | ((prev: WorkspaceData | null) => WorkspaceData | null)) => void
+    switchWorkspace: (id: string) => void
+    createWorkspace: (name: string) => string
+    deleteWorkspace: (id: string) => void
+    renameWorkspace: (id: string, name: string) => void
     syncNow: () => Promise<void>
 }
 
 const WorkspaceContext = createContext<WorkspaceContextValue | undefined>(undefined)
-
-// ─── Constants ───────────────────────────────────────────────────────────────
 
 const SYNC_DEBOUNCE_MS = 2000
 
@@ -26,43 +29,36 @@ const SYNC_DEBOUNCE_MS = 2000
 
 export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     const { user, isGuest, loading: authLoading } = useAuth()
-    const [workspace, setWorkspaceState] = useState<WorkspaceData | null>(null)
+    const [appData, setAppDataState] = useState<AppData | null>(null)
     const [loading, setLoading] = useState(true)
     const [syncing, setSyncing] = useState(false)
 
     const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     const lastSyncedRef = useRef<string | null>(null)
 
-    // Load workspace based on auth state
     useEffect(() => {
         if (authLoading) return
 
         const loadData = async () => {
-            if (!workspace) {
-                setLoading(true)
-            }
+            if (!appData) setLoading(true)
             try {
                 if (user && !isGuest) {
-                    // Authenticated user: try cloud first, fallback to local
-                    const cloudData = await fetchWorkspace(user.id)
+                    const cloudData = await fetchAppData(user.id)
                     if (cloudData) {
-                        setWorkspaceState(cloudData)
+                        setAppDataState(cloudData)
                         lastSyncedRef.current = JSON.stringify(cloudData)
                     } else {
-                        // First time user or no cloud data - use local and sync up
-                        const localData = loadWorkspace()
-                        setWorkspaceState(localData)
-                        await saveWorkspaceToCloud(user.id, localData)
+                        const localData = loadAppData()
+                        setAppDataState(localData)
+                        await saveAppDataToCloud(user.id, localData)
                         lastSyncedRef.current = JSON.stringify(localData)
                     }
                 } else {
-                    // Guest mode: local storage only
-                    const localData = loadWorkspace()
-                    setWorkspaceState(localData)
+                    setAppDataState(loadAppData())
                 }
             } catch (error) {
                 console.error('Failed to load workspace:', error)
-                setWorkspaceState(loadWorkspace())
+                setAppDataState(loadAppData())
             } finally {
                 setLoading(false)
             }
@@ -71,29 +67,20 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         loadData()
     }, [user, isGuest, authLoading])
 
-    // Sync workspace to storage
-    const syncToStorage = useCallback(async (ws: WorkspaceData) => {
-        // Always save to local storage (offline backup)
-        saveWorkspace(ws)
+    const syncToStorage = useCallback(async (ad: AppData) => {
+        saveAppData(ad)
 
-        // If authenticated, also sync to cloud with debounce
         if (user && !isGuest) {
-            const currentData = JSON.stringify(ws)
-
-            // Skip if data hasn't changed
+            const currentData = JSON.stringify(ad)
             if (currentData === lastSyncedRef.current) return
 
-            if (syncTimeoutRef.current) {
-                clearTimeout(syncTimeoutRef.current)
-            }
+            if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current)
 
             syncTimeoutRef.current = setTimeout(async () => {
                 setSyncing(true)
                 try {
-                    const success = await saveWorkspaceToCloud(user.id, ws)
-                    if (success) {
-                        lastSyncedRef.current = currentData
-                    }
+                    const success = await saveAppDataToCloud(user.id, ad)
+                    if (success) lastSyncedRef.current = currentData
                 } finally {
                     setSyncing(false)
                 }
@@ -101,56 +88,107 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         }
     }, [user, isGuest])
 
-    // Save workspace on change
     useEffect(() => {
-        if (!workspace || loading) return
-        syncToStorage(workspace)
-    }, [workspace, loading, syncToStorage])
+        if (!appData || loading) return
+        syncToStorage(appData)
+    }, [appData, loading, syncToStorage])
 
-    // Cleanup on unmount
     useEffect(() => {
-        return () => {
-            if (syncTimeoutRef.current) {
-                clearTimeout(syncTimeoutRef.current)
-            }
-        }
+        return () => { if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current) }
     }, [])
 
-    // Manual sync trigger
     const syncNow = useCallback(async () => {
-        if (!workspace || !user || isGuest) return
-
-        if (syncTimeoutRef.current) {
-            clearTimeout(syncTimeoutRef.current)
-        }
-
+        if (!appData || !user || isGuest) return
+        if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current)
         setSyncing(true)
         try {
-            const success = await saveWorkspaceToCloud(user.id, workspace)
-            if (success) {
-                lastSyncedRef.current = JSON.stringify(workspace)
-            }
+            const success = await saveAppDataToCloud(user.id, appData)
+            if (success) lastSyncedRef.current = JSON.stringify(appData)
         } finally {
             setSyncing(false)
         }
-    }, [workspace, user, isGuest])
+    }, [appData, user, isGuest])
 
-    // Wrapper for setWorkspace
+    // ─── Derived state ───────────────────────────────────────
+
+    const workspace = useMemo(() => {
+        if (!appData) return null
+        return appData.workspaces[appData.currentWorkspaceId] ?? null
+    }, [appData])
+
+    const workspaces = useMemo(() => {
+        if (!appData) return []
+        return Object.values(appData.workspaces)
+    }, [appData])
+
+    // ─── Workspace mutations ─────────────────────────────────
+
     const setWorkspace = useCallback(
         (updater: WorkspaceData | ((prev: WorkspaceData | null) => WorkspaceData | null)) => {
-            setWorkspaceState((prev) => {
-                if (typeof updater === 'function') {
-                    return updater(prev)
+            setAppDataState((prev) => {
+                if (!prev) return prev
+                const currentWs = prev.workspaces[prev.currentWorkspaceId] ?? null
+                const newWs = typeof updater === 'function' ? updater(currentWs) : updater
+                if (!newWs) return prev
+                return {
+                    ...prev,
+                    workspaces: { ...prev.workspaces, [prev.currentWorkspaceId]: newWs },
                 }
-                return updater
             })
         },
         []
     )
 
+    const switchWorkspace = useCallback((id: string) => {
+        setAppDataState((prev) => {
+            if (!prev || !prev.workspaces[id]) return prev
+            return { ...prev, currentWorkspaceId: id }
+        })
+    }, [])
+
+    const createWorkspace = useCallback((name: string): string => {
+        const ws = createEmptyWorkspace(name)
+        setAppDataState((prev) => {
+            if (!prev) return prev
+            return {
+                ...prev,
+                currentWorkspaceId: ws.id,
+                workspaces: { ...prev.workspaces, [ws.id]: ws },
+            }
+        })
+        return ws.id
+    }, [])
+
+    const deleteWorkspace = useCallback((id: string) => {
+        setAppDataState((prev) => {
+            if (!prev) return prev
+            const ids = Object.keys(prev.workspaces)
+            if (ids.length <= 1) return prev // can't delete last workspace
+            const newWorkspaces = { ...prev.workspaces }
+            delete newWorkspaces[id]
+            const newCurrentId = prev.currentWorkspaceId === id
+                ? Object.keys(newWorkspaces)[0]!
+                : prev.currentWorkspaceId
+            return { ...prev, currentWorkspaceId: newCurrentId, workspaces: newWorkspaces }
+        })
+    }, [])
+
+    const renameWorkspace = useCallback((id: string, name: string) => {
+        setAppDataState((prev) => {
+            if (!prev || !prev.workspaces[id]) return prev
+            return {
+                ...prev,
+                workspaces: {
+                    ...prev.workspaces,
+                    [id]: { ...prev.workspaces[id], name },
+                },
+            }
+        })
+    }, [])
+
     const value = useMemo<WorkspaceContextValue>(
-        () => ({ workspace, loading, syncing, setWorkspace, syncNow }),
-        [workspace, loading, syncing, setWorkspace, syncNow]
+        () => ({ workspace, workspaces, loading, syncing, setWorkspace, switchWorkspace, createWorkspace, deleteWorkspace, renameWorkspace, syncNow }),
+        [workspace, workspaces, loading, syncing, setWorkspace, switchWorkspace, createWorkspace, deleteWorkspace, renameWorkspace, syncNow]
     )
 
     return (

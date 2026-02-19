@@ -17,6 +17,7 @@ import {
     Table,
     Type,
     Youtube,
+    Paperclip,
     LucideIcon,
 } from 'lucide-react'
 
@@ -124,8 +125,15 @@ const menuItems: MenuItem[] = [
         label: 'Image',
         type: 'image',
         icon: ImageIcon,
-        keywords: ['photo', 'picture', 'img', 'media', 'fichier'],
+        keywords: ['photo', 'picture', 'img', 'media'],
         description: 'Upload or embed an image'
+    },
+    {
+        label: 'File',
+        type: 'file',
+        icon: Paperclip,
+        keywords: ['attachment', 'upload', 'document', 'pdf', 'fichier', 'pièce jointe', 'télécharger', 'doc'],
+        description: 'Upload and embed a file'
     },
     {
         label: 'YouTube',

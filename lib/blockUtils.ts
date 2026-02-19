@@ -129,6 +129,7 @@ export const getBlockTypeName = (type: BlockType): string => {
         'image': 'Image',
         'table': 'Table',
         'youtube': 'YouTube',
+        'file': 'File',
     }
     return typeNames[type] || type
 }
@@ -153,6 +154,7 @@ export const getBlockPlaceholder = (type: BlockType): string => {
         'image': '',
         'table': '',
         'youtube': 'Paste a YouTube URL...',
+        'file': '',
     }
     return placeholders[type] || ''
 }
@@ -192,6 +194,7 @@ export const getRecommendedNextType = (currentType: BlockType): BlockType => {
         'image': 'text',
         'table': 'text',
         'youtube': 'text',
+        'file': 'text',
     }
     return recommendations[currentType] || 'text'
 }
@@ -367,6 +370,7 @@ export const blocksToPlainText = (blocks: Block[]): string => {
             case 'image': text = block.imageUrl || '[Image]'; break
             case 'table': text = '[Table]'; break
             case 'youtube': text = block.youtubeUrl || '[YouTube]'; break
+            case 'file': text = block.fileUrl ? `[File: ${block.fileName || 'file'}](${block.fileUrl})` : '[File]'; break
             default: text = block.content; break
         }
         if (block.children && block.children.length > 0) {

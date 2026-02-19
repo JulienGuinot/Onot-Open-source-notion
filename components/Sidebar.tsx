@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import {
     Plus,
     Search,
@@ -10,8 +10,10 @@ import {
     Keyboard,
     Sparkles,
     ChevronDown,
+    Check,
+    Trash2,
 } from 'lucide-react'
-import { Page } from '@/lib/types'
+import { Page, WorkspaceData } from '@/lib/types'
 import { PageItem } from './pages/PageItem'
 
 interface SidebarProps {
@@ -19,12 +21,19 @@ interface SidebarProps {
     pageOrder: string[]
     currentPageId: string | null
     darkMode: boolean
+    workspaceName: string
+    workspaces: WorkspaceData[]
+    currentWorkspaceId: string
     onSelectPage: (pageId: string) => void
     onCreatePage: (parentId?: string | null) => void
     onDeletePage: (pageId: string) => void
     onToggleSearch: () => void
     onToggleDarkMode: () => void
     onShowShortcuts?: () => void
+    onSwitchWorkspace: (id: string) => void
+    onCreateWorkspace: (name: string) => void
+    onDeleteWorkspace: (id: string) => void
+    onRenameWorkspace: (id: string, name: string) => void
     expandedPages: Set<string>
     onToggleExpand: (pageId: string) => void
 }
@@ -34,12 +43,19 @@ export default function Sidebar({
     pageOrder,
     currentPageId,
     darkMode,
+    workspaceName,
+    workspaces,
+    currentWorkspaceId,
     onSelectPage,
     onCreatePage,
     onDeletePage,
     onToggleSearch,
     onToggleDarkMode,
     onShowShortcuts,
+    onSwitchWorkspace,
+    onCreateWorkspace,
+    onDeleteWorkspace,
+    onRenameWorkspace,
     expandedPages,
     onToggleExpand,
 }: SidebarProps) {
@@ -47,6 +63,37 @@ export default function Sidebar({
     const favorites = pageOrder.filter((id) => pages[id]?.isFavorite)
     const [favoritesExpanded, setFavoritesExpanded] = useState(true)
     const [pagesExpanded, setPagesExpanded] = useState(true)
+    const [wsDropdownOpen, setWsDropdownOpen] = useState(false)
+    const [newWsName, setNewWsName] = useState('')
+    const [showNewWsInput, setShowNewWsInput] = useState(false)
+    const dropdownRef = useRef<HTMLDivElement>(null)
+    const newWsInputRef = useRef<HTMLInputElement>(null)
+
+    useEffect(() => {
+        if (!wsDropdownOpen) return
+        const handleClick = (e: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+                setWsDropdownOpen(false)
+                setShowNewWsInput(false)
+                setNewWsName('')
+            }
+        }
+        document.addEventListener('mousedown', handleClick)
+        return () => document.removeEventListener('mousedown', handleClick)
+    }, [wsDropdownOpen])
+
+    useEffect(() => {
+        if (showNewWsInput) newWsInputRef.current?.focus()
+    }, [showNewWsInput])
+
+    const handleCreateWorkspace = () => {
+        const name = newWsName.trim()
+        if (!name) return
+        onCreateWorkspace(name)
+        setNewWsName('')
+        setShowNewWsInput(false)
+        setWsDropdownOpen(false)
+    }
 
     return (
         <div className="w-60 bg-[#fbfbfa] dark:bg-[#191919] border-r border-gray-200/80
@@ -54,12 +101,96 @@ export default function Sidebar({
             {/* Header */}
             <div className="p-3 border-b border-gray-200/60 dark:border-gray-800/60">
                 <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
+                    <div className="relative" ref={dropdownRef}>
+                        <button
+                            onClick={() => setWsDropdownOpen(!wsDropdownOpen)}
+                            className="flex items-center gap-1.5 hover:bg-gray-100 dark:hover:bg-gray-800/60
+                                       rounded-md px-1.5 py-1 transition-colors group"
+                        >
+                            <h1 className="font-semibold text-sm text-gray-800 dark:text-gray-200 truncate max-w-[140px]">
+                                {workspaceName || 'Workspace'}
+                            </h1>
+                            <ChevronDown size={12} className="text-gray-400 flex-shrink-0" />
+                        </button>
 
-                        <h1 className="font-semibold text-xl text-gray-800 dark:text-gray-200">
-                            Onot
-                        </h1>
+                        {wsDropdownOpen && (
+                            <div className="absolute left-0 top-full mt-1 w-56 bg-white dark:bg-[#252525]
+                                            border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-50 py-1">
+                                <div className="px-3 py-1.5">
+                                    <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                                        Workspaces
+                                    </span>
+                                </div>
+                                {workspaces.map((ws) => (
+                                    <button
+                                        key={ws.id}
+                                        onClick={() => {
+                                            onSwitchWorkspace(ws.id)
+                                            setWsDropdownOpen(false)
+                                        }}
+                                        className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left
+                                                   hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors group/ws"
+                                    >
+
+                                        <span className="truncate flex-1 text-gray-700 dark:text-gray-300">
+                                            {ws.name}
+                                        </span>
+                                        {ws.id === currentWorkspaceId && (
+                                            <Check size={14} className="text-blue-500 flex-shrink-0" />
+                                        )}
+                                        {ws.id !== currentWorkspaceId && workspaces.length > 1 && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    if (confirm(`Delete workspace "${ws.name}"?`)) {
+                                                        onDeleteWorkspace(ws.id)
+                                                    }
+                                                }}
+                                                className="p-0.5 rounded hover:bg-red-100 dark:hover:bg-red-900/30
+                                                           opacity-0 group-hover/ws:opacity-100 transition-opacity"
+                                            >
+                                                <Trash2 size={12} className="text-red-400" />
+                                            </button>
+                                        )}
+                                    </button>
+                                ))}
+
+                                <div className="border-t border-gray-200 dark:border-gray-700 mt-1 pt-1">
+                                    {showNewWsInput ? (
+                                        <div className="px-3 py-1.5">
+                                            <input
+                                                ref={newWsInputRef}
+                                                value={newWsName}
+                                                onChange={(e) => setNewWsName(e.target.value)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') handleCreateWorkspace()
+                                                    if (e.key === 'Escape') {
+                                                        setShowNewWsInput(false)
+                                                        setNewWsName('')
+                                                    }
+                                                }}
+                                                placeholder="Workspace name..."
+                                                className="w-full text-sm px-2 py-1 rounded border border-gray-300
+                                                           dark:border-gray-600 bg-transparent text-gray-800 dark:text-gray-200
+                                                           focus:outline-none focus:border-blue-500 placeholder-gray-400"
+                                            />
+                                        </div>
+                                    ) : (
+                                        <button
+                                            onClick={() => setShowNewWsInput(true)}
+                                            className="w-full flex items-center gap-2 px-3 py-1.5 text-sm
+                                                       text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700/50
+                                                       transition-colors"
+                                        >
+                                            <Plus size={14} />
+                                            <span>New workspace</span>
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
+
                     <button
                         onClick={onToggleDarkMode}
                         className="p-1.5 hover:bg-gray-200/70 dark:hover:bg-gray-700/70 rounded-md

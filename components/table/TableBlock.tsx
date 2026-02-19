@@ -101,9 +101,11 @@ function RowActionMenu({
 interface TableBlockProps {
   block: Block;
   onUpdate: (block: Block) => void;
+  onNavigateToPreviousBlock?: () => void;
+  onNavigateToNextBlock?: () => void;
 }
 
-export default function TableBlock({ block, onUpdate }: TableBlockProps) {
+export default function TableBlock({ block, onUpdate, onNavigateToPreviousBlock, onNavigateToNextBlock }: TableBlockProps) {
   const [tableData, setTableData] = useState<TableData>(
     block.tableData || createDefaultTable()
   );
@@ -472,28 +474,87 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
 
   // ─── Keyboard Navigation ────────
 
+  const displayRowsCountRef = useRef(0);
+
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (!selectedCell) return;
 
+    // Let modifier combos (Ctrl+Z, Ctrl+C, etc.) bubble up to global handlers
+    if (e.ctrlKey || e.metaKey) return;
+
+    const activeEl = document.activeElement;
+    const isEditingCell = (activeEl instanceof HTMLInputElement || activeEl instanceof HTMLTextAreaElement) &&
+                          tableRef.current?.contains(activeEl);
+
     const { rowIndex, colIndex } = selectedCell;
+
+    // When actively editing a cell input, only intercept Tab to navigate between cells
+    if (isEditingCell) {
+      if (e.key === 'Tab') {
+        (activeEl as HTMLElement).blur();
+
+        let newRow = rowIndex;
+        let newCol = colIndex;
+
+        if (e.shiftKey) {
+          if (colIndex > 0) newCol = colIndex - 1;
+          else if (rowIndex > 0) { newRow = rowIndex - 1; newCol = visibleColumns.length - 1; }
+        } else {
+          if (colIndex < visibleColumns.length - 1) newCol = colIndex + 1;
+          else if (rowIndex < displayRowsCountRef.current - 1) { newRow = rowIndex + 1; newCol = 0; }
+        }
+
+        if (newRow !== rowIndex || newCol !== colIndex) {
+          setSelectedCell({ rowIndex: newRow, colIndex: newCol });
+        }
+        e.preventDefault();
+      }
+      return;
+    }
+
+    // Cell navigation mode (cell selected, not editing)
     let newRow = rowIndex;
     let newCol = colIndex;
 
     switch (e.key) {
       case 'ArrowUp':
-        newRow = Math.max(0, rowIndex - 1);
+        if (rowIndex === 0) {
+          setSelectedCell(null);
+          onNavigateToPreviousBlock?.();
+          e.preventDefault();
+          return;
+        }
+        newRow = rowIndex - 1;
         e.preventDefault();
         break;
       case 'ArrowDown':
-        newRow = Math.min(displayRows.length - 1, rowIndex + 1);
+        if (rowIndex >= displayRowsCountRef.current - 1) {
+          setSelectedCell(null);
+          onNavigateToNextBlock?.();
+          e.preventDefault();
+          return;
+        }
+        newRow = rowIndex + 1;
         e.preventDefault();
         break;
       case 'ArrowLeft':
-        newCol = Math.max(0, colIndex - 1);
+        if (colIndex === 0) {
+          setSelectedCell(null);
+          onNavigateToPreviousBlock?.();
+          e.preventDefault();
+          return;
+        }
+        newCol = colIndex - 1;
         e.preventDefault();
         break;
       case 'ArrowRight':
-        newCol = Math.min(visibleColumns.length - 1, colIndex + 1);
+        if (colIndex >= visibleColumns.length - 1) {
+          setSelectedCell(null);
+          onNavigateToNextBlock?.();
+          e.preventDefault();
+          return;
+        }
+        newCol = colIndex + 1;
         e.preventDefault();
         break;
       case 'Tab':
@@ -507,7 +568,7 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
         } else {
           if (colIndex < visibleColumns.length - 1) {
             newCol = colIndex + 1;
-          } else if (rowIndex < displayRows.length - 1) {
+          } else if (rowIndex < displayRowsCountRef.current - 1) {
             newRow = rowIndex + 1;
             newCol = 0;
           }
@@ -516,7 +577,8 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
         break;
       case 'Escape':
         setSelectedCell(null);
-        break;
+        e.preventDefault();
+        return;
       default:
         break;
     }
@@ -524,7 +586,7 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
     if (newRow !== rowIndex || newCol !== colIndex) {
       setSelectedCell({ rowIndex: newRow, colIndex: newCol });
     }
-  }, [selectedCell, visibleColumns.length]);
+  }, [selectedCell, visibleColumns.length, onNavigateToPreviousBlock, onNavigateToNextBlock]);
 
   useEffect(() => {
     if (selectedCell) {
@@ -533,6 +595,20 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
     }
     return undefined;
   }, [selectedCell, handleKeyDown]);
+
+  // Clear cell selection when clicking outside the table
+  useEffect(() => {
+    if (!selectedCell) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (tableRef.current && !tableRef.current.contains(e.target as Node)) {
+        setSelectedCell(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [selectedCell]);
 
   // ─── Sorting ───────
 
@@ -672,6 +748,8 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
     }
   }
 
+  displayRowsCountRef.current = displayRows.length;
+
   // ─── Render Cell ───────
 
   const renderCell = (row: TableRow, col: TableColumn) => {
@@ -741,6 +819,7 @@ export default function TableBlock({ block, onUpdate }: TableBlockProps) {
   return (
     <div
       ref={tableRef}
+      data-table-block
       className="my-4 rounded-xl overflow-hidden border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 shadow-sm"
     >
       {/* Toolbar */}

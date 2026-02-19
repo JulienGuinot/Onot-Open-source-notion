@@ -21,14 +21,17 @@ export default function Home() {
     const [showShortcuts, setShowShortcuts] = useState(false)
     const [sidebarOpen, setSidebarOpen] = useState(true)
     const { user, isGuest, signOut } = useAuth()
-    const { workspace, loading: workspaceLoading, setWorkspace } = useWorkspace()
+    const { workspace, workspaces, loading: workspaceLoading, setWorkspace, switchWorkspace, createWorkspace, deleteWorkspace, renameWorkspace } = useWorkspace()
 
-    // Set initial page
+    // Set initial page or reset on workspace switch
     useEffect(() => {
-        if (workspace && !currentPageId) {
-            setCurrentPageId(workspace.pageOrder[0] || null)
+        if (workspace) {
+            const validPage = currentPageId && workspace.pages[currentPageId]
+            if (!validPage) {
+                setCurrentPageId(workspace.pageOrder[0] || null)
+            }
         }
-    }, [workspace])
+    }, [workspace?.id])
 
     const darkMode = workspace?.darkMode ?? false
     const pages = workspace?.pages ?? {}
@@ -193,12 +196,19 @@ export default function Home() {
                     pageOrder={pageOrder}
                     currentPageId={currentPageId}
                     darkMode={darkMode}
+                    workspaceName={workspace?.name ?? 'Workspace'}
+                    workspaces={workspaces}
+                    currentWorkspaceId={workspace?.id ?? ''}
                     onSelectPage={setCurrentPageId}
                     onCreatePage={(parentId) => createPage(parentId ?? null)}
                     onDeletePage={deletePage}
                     onToggleSearch={() => setShowSearch(true)}
                     onToggleDarkMode={toggleDarkMode}
                     onShowShortcuts={() => setShowShortcuts(true)}
+                    onSwitchWorkspace={switchWorkspace}
+                    onCreateWorkspace={createWorkspace}
+                    onDeleteWorkspace={deleteWorkspace}
+                    onRenameWorkspace={renameWorkspace}
                     expandedPages={expandedPages}
                     onToggleExpand={toggleExpand}
                 />

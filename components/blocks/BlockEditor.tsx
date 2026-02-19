@@ -8,6 +8,7 @@ import ContextMenu from '@/components/ContextMenu'
 import ToggleBlock from '@/components/blocks/ToggleBlock'
 import CalloutBlock from '@/components/blocks/CalloutBlock'
 import ImageBlock from '@/components/blocks/ImageBlock'
+import FileBlock from '@/components/blocks/FileBlock'
 import YoutubeBlock from '@/components/blocks/YoutubeBlock'
 import TodoBlock from '@/components/blocks/TodoBlock'
 import DividerBlock from '@/components/blocks/DividerBlock'
@@ -139,18 +140,23 @@ export default function BlockEditor({
     // ─── Computed ────────────────────────────────────────────
     const blockStyle = BLOCK_STYLES[block.type] || ''
     const placeholder = BLOCK_PLACEHOLDERS[block.type] || ''
+    const isNonTextBlock = ['divider', 'image', 'youtube', 'table', 'file'].includes(block.type)
 
     // ─── Effects ─────────────────────────────────────────────
 
     useEffect(() => {
-        if (autoFocus && inputRef.current) {
-            setTimeout(() => {
-                if (inputRef.current) {
-                    inputRef.current.focus()
-                    const len = inputRef.current.value.length
-                    inputRef.current.setSelectionRange(len, len)
-                }
-            }, 0)
+        if (autoFocus) {
+            if (inputRef.current) {
+                setTimeout(() => {
+                    if (inputRef.current) {
+                        inputRef.current.focus()
+                        const len = inputRef.current.value.length
+                        inputRef.current.setSelectionRange(len, len)
+                    }
+                }, 0)
+            } else if (blockRef.current) {
+                setTimeout(() => blockRef.current?.focus(), 0)
+            }
         }
     }, [autoFocus, block.id])
 
@@ -412,6 +418,45 @@ export default function BlockEditor({
         onUpdate({ ...block, content: newContent })
     }
 
+    // ─── Container keyboard handler (non-text blocks) ──────
+
+    const handleBlockKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.target !== blockRef.current) return
+        if (e.ctrlKey || e.metaKey) return
+
+        switch (e.key) {
+            case 'ArrowUp':
+                e.preventDefault()
+                onNavigateToPreviousBlock?.()
+                break
+            case 'ArrowDown':
+                e.preventDefault()
+                onNavigateToNextBlock?.()
+                break
+            case 'ArrowLeft':
+                e.preventDefault()
+                onNavigateToPreviousBlock?.()
+                break
+            case 'ArrowRight':
+                e.preventDefault()
+                onNavigateToNextBlock?.()
+                break
+            case 'Enter':
+                if (!e.shiftKey && block.type !== 'table') {
+                    e.preventDefault()
+                    onEnter()
+                }
+                break
+            case 'Backspace':
+            case 'Delete':
+                if (block.type !== 'table') {
+                    e.preventDefault()
+                    onDelete()
+                }
+                break
+        }
+    }
+
     // ─── Event handlers ──────────────────────────────────────
 
     const handleContextMenu = (e: ReactMouseEvent<HTMLDivElement>) => {
@@ -576,7 +621,11 @@ export default function BlockEditor({
     return (
         <div
             ref={blockRef}
-            className={`group flex items-start gap-1 relative transition-all duration-150 rounded-lg -mx-2 px-2 py-0.5
+            tabIndex={isNonTextBlock ? -1 : undefined}
+            onKeyDown={isNonTextBlock ? handleBlockKeyDown : undefined}
+            onFocus={isNonTextBlock ? (e) => { if (e.target === blockRef.current) setIsFocused(true) } : undefined}
+            onBlur={isNonTextBlock ? (e) => { if (e.target === blockRef.current) setIsFocused(false) } : undefined}
+            className={`group flex items-start gap-1 relative transition-all duration-150 rounded-lg -mx-2 px-2 py-0.5 outline-none
                 ${isDragging ? 'opacity-50 bg-blue-50 dark:bg-zinc-900/30' : ''}
                 ${isSelected ? 'bg-blue-100/60 dark:bg-zinc-900/30 ring-1 ' : ''}
                 ${contextMenu && !isSelected ? 'bg-zinc-100 dark:bg-gray-800/50 border border-blue-200 dark:border-yellow-500 border-dashed' : ''}
@@ -665,8 +714,16 @@ export default function BlockEditor({
                 ) : block.type === 'image' ? (
                     <ImageBlock block={block} onUpdate={onUpdate} onKeyDown={handleKeyDown as any} />
 
+                ) : block.type === 'file' ? (
+                    <FileBlock block={block} onUpdate={onUpdate} onKeyDown={handleKeyDown as any} />
+
                 ) : block.type === 'table' ? (
-                    <TableBlock block={block} onUpdate={onUpdate} />
+                    <TableBlock
+                        block={block}
+                        onUpdate={onUpdate}
+                        onNavigateToPreviousBlock={onNavigateToPreviousBlock}
+                        onNavigateToNextBlock={onNavigateToNextBlock}
+                    />
 
                 ) : block.type === 'youtube' ? (
                     <YoutubeBlock block={block} onUpdate={onUpdate} onKeyDown={handleKeyDown as any} />

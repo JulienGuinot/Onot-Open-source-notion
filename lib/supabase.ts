@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js'
-import type { WorkspaceData } from './types'
+import type { AppData, WorkspaceData } from './types'
 
 // ─── Client Setup ────────────────────────────────────────────────────────────
 
@@ -16,7 +16,7 @@ export default supabase
 
 // ─── Database Operations ─────────────────────────────────────────────────────
 
-export async function fetchWorkspace(userId: string): Promise<WorkspaceData | null> {
+export async function fetchAppData(userId: string): Promise<AppData | null> {
     if (!supabase) return null
 
     const { data, error } = await supabase
@@ -26,17 +26,26 @@ export async function fetchWorkspace(userId: string): Promise<WorkspaceData | nu
         .single()
 
     if (error) {
-        if (error.code === 'PGRST116') return null // No rows found
-        console.error('Failed to fetch workspace:', error)
+        if (error.code === 'PGRST116') return null
+        console.error('Failed to fetch app data:', error)
         return null
     }
 
-    return data?.data as WorkspaceData | null
+    const stored = data?.data
+    if (!stored) return null
+
+    // Migrate legacy single-workspace cloud data
+    if (stored.pages && !stored.workspaces) {
+        const ws: WorkspaceData = { id: 'default', name: 'My Workspace', ...stored }
+        return { currentWorkspaceId: 'default', workspaces: { default: ws } }
+    }
+
+    return stored as AppData
 }
 
-export async function saveWorkspaceToCloud(
+export async function saveAppDataToCloud(
     userId: string,
-    workspace: WorkspaceData
+    appData: AppData
 ): Promise<boolean> {
     if (!supabase) return false
 
@@ -44,12 +53,12 @@ export async function saveWorkspaceToCloud(
         .from('workspaces')
         .upsert({
             user_id: userId,
-            data: workspace,
+            data: appData,
             updated_at: new Date().toISOString()
         }, { onConflict: 'user_id' })
 
     if (error) {
-        console.error('Failed to save workspace:', error)
+        console.error('Failed to save app data:', error)
         return false
     }
 

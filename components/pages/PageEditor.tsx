@@ -412,9 +412,13 @@ export default function PageEditor({
         const handleKeyDown = (e: KeyboardEvent) => {
             const activeEl = document.activeElement
             const isInInput = activeEl instanceof HTMLTextAreaElement || activeEl instanceof HTMLInputElement
+            const isInNativeInput = activeEl instanceof HTMLInputElement
 
             // Ctrl/Cmd + Z: Undo
+            // Let native undo work in <input> elements (page title, table cells, etc.)
+            // Only use custom undo for block textareas and when no input is focused
             if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
+                if (isInNativeInput) return
                 e.preventDefault()
                 handleUndo()
                 return
@@ -423,6 +427,7 @@ export default function PageEditor({
             // Ctrl/Cmd + Shift + Z or Ctrl/Cmd + Y: Redo
             if (((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'z') ||
                 ((e.metaKey || e.ctrlKey) && e.key === 'y')) {
+                if (isInNativeInput) return
                 e.preventDefault()
                 handleRedo()
                 return

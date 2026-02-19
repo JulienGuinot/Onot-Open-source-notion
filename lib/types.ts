@@ -16,6 +16,7 @@ export type BlockType =
     | 'image'
     | 'table'
     | 'youtube'
+    | 'file'
 
 // ─── Table / Database Types ───────────────────────────────────
 
@@ -126,6 +127,11 @@ export interface Block {
     imageCaption?: string;
     // YouTube specific
     youtubeUrl?: string;
+    // File specific
+    fileUrl?: string;
+    fileName?: string;
+    fileSize?: number;
+    fileMimeType?: string;
     // UI state
     autoFocus?: boolean;
 }
@@ -148,7 +154,14 @@ export interface Page {
 // ─── Workspace ────────────────────────────────────────────────
 
 export interface WorkspaceData {
+    id: string;
+    name: string;
     pages: Record<string, Page>;
     pageOrder: string[];
     darkMode?: boolean;
+}
+
+export interface AppData {
+    currentWorkspaceId: string;
+    workspaces: Record<string, WorkspaceData>;
 }
