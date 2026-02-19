@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient, RealtimeChannel } from '@supabase/supabase-js'
-import type { Page, WorkspaceData, WorkspaceMember, WorkspaceInvite, MemberRole } from './types'
+import type { Page, WorkspaceData, WorkspaceMember, WorkspaceInvite, MemberRole, UserProfile } from './types'
 
 // ─── Client Setup ────────────────────────────────────────────────────────────
 
@@ -241,6 +241,56 @@ export async function deletePageFromCloud(
     return true
 }
 
+// ─── Profiles ────────────────────────────────────────────────────────────────
+
+export async function fetchProfile(userId: string): Promise<UserProfile | null> {
+    if (!supabase) return null
+
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+
+    if (error || !data) return null
+    return data as UserProfile
+}
+
+export async function upsertProfile(
+    profile: Pick<UserProfile, 'id'> & Partial<Omit<UserProfile, 'id' | 'created_at' | 'updated_at'>>
+): Promise<UserProfile | null> {
+    if (!supabase) return null
+
+    const { data, error } = await supabase
+        .from('profiles')
+        .upsert(profile, { onConflict: 'id' })
+        .select()
+        .single()
+
+    if (error || !data) {
+        console.error('Failed to upsert profile:', formatError(error))
+        return null
+    }
+    return data as UserProfile
+}
+
+export async function fetchProfilesByIds(userIds: string[]): Promise<Record<string, UserProfile>> {
+    if (!supabase || !userIds.length) return {}
+
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .in('id', userIds)
+
+    if (error || !data) return {}
+
+    const map: Record<string, UserProfile> = {}
+    for (const p of data) {
+        map[p.id] = p as UserProfile
+    }
+    return map
+}
+
 // ─── Members ─────────────────────────────────────────────────────────────────
 
 export async function fetchWorkspaceMembers(
@@ -258,7 +308,13 @@ export async function fetchWorkspaceMembers(
         return []
     }
 
-    return data as WorkspaceMember[]
+    const userIds = data.map((m) => m.user_id)
+    const profiles = await fetchProfilesByIds(userIds)
+
+    return data.map((m) => ({
+        ...m,
+        profile: profiles[m.user_id],
+    })) as WorkspaceMember[]
 }
 
 export async function addMember(
@@ -579,8 +635,8 @@ export function subscribeToWorkspaceChanges(
 export function subscribeToPresence(
     workspaceId: string,
     userId: string,
-    email: string,
-    onSync: (users: { user_id: string; email: string; online_at: string }[]) => void
+    presenceData: { email: string; first_name?: string; last_name?: string; avatar_url?: string },
+    onSync: (users: { user_id: string; email: string; online_at: string; first_name?: string; last_name?: string; avatar_url?: string }[]) => void
 ): RealtimeChannel | null {
     if (!supabase) return null
 
@@ -590,13 +646,19 @@ export function subscribeToPresence(
 
     channel
         .on('presence', { event: 'sync' }, () => {
-            const state = channel.presenceState<{ user_id: string; email: string; online_at: string }>()
+            const state = channel.presenceState<{
+                user_id: string; email: string; online_at: string;
+                first_name?: string; last_name?: string; avatar_url?: string
+            }>()
             const users = Object.values(state)
                 .flat()
                 .map((u) => ({
                     user_id: u.user_id,
                     email: u.email,
                     online_at: u.online_at,
+                    first_name: u.first_name,
+                    last_name: u.last_name,
+                    avatar_url: u.avatar_url,
                 }))
             onSync(users)
         })
@@ -604,8 +666,8 @@ export function subscribeToPresence(
             if (status === 'SUBSCRIBED') {
                 await channel.track({
                     user_id: userId,
-                    email,
                     online_at: new Date().toISOString(),
+                    ...presenceData,
                 })
             }
         })

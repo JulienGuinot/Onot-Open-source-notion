@@ -51,7 +51,7 @@ export function PageContextMenu({
     return (
         <div
             ref={menuRef}
-            className="fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 
+            className="fixed bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 
                  rounded-lg shadow-xl z-50 py-1 w-56 animate-in fade-in zoom-in-95 duration-100"
             style={{ left: x, top: y }}
         >
@@ -62,7 +62,7 @@ export function PageContextMenu({
                         onClose()
                     }}
                     className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300
-                       hover:bg-gray-100 dark:hover:bg-gray-700 text-left transition-colors"
+                       hover:bg-gray-100 dark:hover:bg-zinc-700 text-left transition-colors"
                 >
                     <Edit size={16} />
                     <span>Rename</span>
@@ -75,7 +75,7 @@ export function PageContextMenu({
                     onClose()
                 }}
                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300
-                   hover:bg-gray-100 dark:hover:bg-gray-700 text-left transition-colors"
+                   hover:bg-gray-100 dark:hover:bg-zinc-700 text-left transition-colors"
             >
                 <FolderPlus size={16} />
                 <span>Add sub-page</span>
@@ -88,7 +88,7 @@ export function PageContextMenu({
                         onClose()
                     }}
                     className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300
-                       hover:bg-gray-100 dark:hover:bg-gray-700 text-left transition-colors"
+                       hover:bg-gray-100 dark:hover:bg-zinc-700 text-left transition-colors"
                 >
                     <Copy size={16} />
                     <span>Duplicate</span>
@@ -102,14 +102,14 @@ export function PageContextMenu({
                         onClose()
                     }}
                     className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300
-                       hover:bg-gray-100 dark:hover:bg-gray-700 text-left transition-colors"
+                       hover:bg-gray-100 dark:hover:bg-zinc-700 text-left transition-colors"
                 >
                     <Link size={16} />
                     <span>Copy link</span>
                 </button>
             )}
 
-            <div className="border-t border-gray-200 dark:border-gray-700 my-1" />
+            <div className="border-t border-gray-200 dark:border-zinc-700 my-1" />
 
             <button
                 onClick={() => {

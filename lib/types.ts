@@ -151,6 +151,18 @@ export interface Page {
     updatedAt: number;
 }
 
+// ─── Profiles ─────────────────────────────────────────────────
+
+export interface UserProfile {
+    id: string;
+    email: string;
+    first_name: string;
+    last_name: string;
+    avatar_url: string;
+    created_at: string;
+    updated_at: string;
+}
+
 // ─── Collaboration ────────────────────────────────────────────
 
 export type MemberRole = 'owner' | 'editor' | 'viewer';
@@ -161,6 +173,7 @@ export interface WorkspaceMember {
     role: MemberRole;
     created_at: string;
     email?: string;
+    profile?: UserProfile;
 }
 
 export interface WorkspaceInvite {
@@ -177,6 +190,9 @@ export interface PresenceUser {
     user_id: string;
     email: string;
     online_at: string;
+    first_name?: string;
+    last_name?: string;
+    avatar_url?: string;
 }
 
 // ─── Workspace ────────────────────────────────────────────────

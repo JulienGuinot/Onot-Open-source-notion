@@ -484,7 +484,7 @@ export default function TableBlock({ block, onUpdate, onNavigateToPreviousBlock,
 
     const activeEl = document.activeElement;
     const isEditingCell = (activeEl instanceof HTMLInputElement || activeEl instanceof HTMLTextAreaElement) &&
-                          tableRef.current?.contains(activeEl);
+      tableRef.current?.contains(activeEl);
 
     const { rowIndex, colIndex } = selectedCell;
 
@@ -1219,17 +1219,19 @@ export default function TableBlock({ block, onUpdate, onNavigateToPreviousBlock,
       </div>
 
       {/* Row Action Menu Portal */}
-      {rowActionMenu && (
-        <RowActionMenu
-          rowId={rowActionMenu.rowId}
-          triggerRef={{ current: rowActionMenu.element }}
-          onInsertAbove={() => insertRowAt(rowActionMenu.rowId, 'above')}
-          onInsertBelow={() => insertRowAt(rowActionMenu.rowId, 'below')}
-          onDuplicate={() => duplicateRow(rowActionMenu.rowId)}
-          onDelete={() => deleteRow(rowActionMenu.rowId)}
-          onClose={() => setRowActionMenu(null)}
-        />
-      )}
-    </div>
+      {
+        rowActionMenu && (
+          <RowActionMenu
+            rowId={rowActionMenu.rowId}
+            triggerRef={{ current: rowActionMenu.element }}
+            onInsertAbove={() => insertRowAt(rowActionMenu.rowId, 'above')}
+            onInsertBelow={() => insertRowAt(rowActionMenu.rowId, 'below')}
+            onDuplicate={() => duplicateRow(rowActionMenu.rowId)}
+            onDelete={() => deleteRow(rowActionMenu.rowId)}
+            onClose={() => setRowActionMenu(null)}
+          />
+        )
+      }
+    </div >
   );
 }

@@ -5,13 +5,16 @@ import Sidebar from '@/components/Sidebar'
 import SearchModal from '@/components/SearchModal'
 import KeyboardShortcutsModal from '@/components/KeyboardShortcutsModal'
 import ShareModal from '@/components/ShareModal'
+import ProfileSetupModal from '@/components/ProfileSetupModal'
 import PresenceAvatars from '@/components/PresenceAvatars'
 import { Page } from '@/lib/types'
-import { PanelLeft, LogIn, LogOut, ChevronDown, ChevronUp, Share2 } from 'lucide-react'
+import { PanelLeft, LogIn, LogOut, ChevronDown, Share2 } from 'lucide-react'
 import Link from 'next/link'
 import { useWorkspace } from '@/providers/WorkspaceProvider'
 import PageEditor from '@/components/pages/PageEditor'
 import { useAuth } from '@/providers/AuthProvider'
+import { WorkspaceContextMenu } from '@/components/WorkspaceContextMenu'
+import UserAvatar, { getUserDisplayName } from '@/components/UserAvatar'
 
 export default function Home() {
     const [currentPageId, setCurrentPageId] = useState<string | null>(null)
@@ -20,8 +23,10 @@ export default function Home() {
     const [showSearch, setShowSearch] = useState(false)
     const [showShortcuts, setShowShortcuts] = useState(false)
     const [showShare, setShowShare] = useState(false)
+    const [wsContextMenu, setWsContextMenu] = useState<boolean>(false)
+
     const [sidebarOpen, setSidebarOpen] = useState(true)
-    const { user, isGuest, signOut } = useAuth()
+    const { user, isGuest, profile, needsProfileSetup, completeProfileSetup, signOut } = useAuth()
     const {
         workspace, workspaces, pages, onlineUsers, userRole, conflictPageId,
         loading: workspaceLoading,
@@ -114,6 +119,12 @@ export default function Home() {
         setPage(updatedPage)
     }
 
+    const handleRenamePage = (pageId: string, newTitle: string) => {
+        const page = pages[pageId]
+        if (!page || userRole === 'viewer') return
+        setPage({ ...page, title: newTitle, updatedAt: Date.now() })
+    }
+
     const toggleExpand = (pageId: string) => {
         setExpandedPages((prev) => {
             const next = new Set(prev)
@@ -131,7 +142,7 @@ export default function Home() {
 
     if (!workspace) {
         return (
-            <div className="flex h-screen items-center justify-center bg-white dark:bg-gray-900">
+            <div className="flex h-screen items-center justify-center bg-white dark:bg-zinc-900">
                 <div className="text-gray-600 dark:text-gray-400">No workspace found</div>
             </div>
         )
@@ -155,6 +166,9 @@ export default function Home() {
                     workspaces={workspaces}
                     currentWorkspaceId={workspace?.id ?? ''}
                     userRole={userRole}
+                    profile={profile}
+                    userEmail={user?.email}
+                    userId={user?.id}
                     onSelectPage={setCurrentPageId}
                     onCreatePage={(parentId) => handleCreatePage(parentId ?? null)}
                     onDeletePage={handleDeletePage}
@@ -166,6 +180,7 @@ export default function Home() {
                     onCreateWorkspace={createWorkspace}
                     onDeleteWorkspace={deleteWorkspace}
                     onRenameWorkspace={renameWorkspace}
+                    onRenamePage={handleRenamePage}
                     expandedPages={expandedPages}
                     onToggleExpand={toggleExpand}
                 />
@@ -177,7 +192,7 @@ export default function Home() {
                 <div className="px-4 py-2.5 flex items-center gap-3 z-10">
                     <button
                         onClick={() => setSidebarOpen(!sidebarOpen)}
-                        className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
+                        className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-md transition-colors"
                         title={sidebarOpen ? 'Close sidebar (⌘\\)' : 'Open sidebar (⌘\\)'}
                     >
                         <PanelLeft size={18} className="text-gray-500 dark:text-gray-400" />
@@ -208,33 +223,116 @@ export default function Home() {
                         </button>
                     )}
 
-                    {user ? (
-                        <div onClick={() => setEmailClicked(!emailClicked)} className="flex text-sm text-blue-600 bg-blue-500/10 dark:bg-zinc-700/30 cursor-pointer dark:text-gray-400 rounded-lg px-2 py-0.5">
-                            {user.email} {emailClicked ? <ChevronUp /> : ""}
-                            {emailClicked &&
-                                <button
-                                    onClick={() => signOut()}
-                                    className="mt-2 absolute top-10 flex items-center gap-1.5 py-1.5 px-3 bg-zinc-700 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-red-500 rounded-lg transition-colors"
-                                >
-                                    <LogOut size={14} />
-                                    Sign out
-                                </button>
+
+                    {user && !isGuest && (
+                        <div
+                            onClick={(e) => {
+                                e.preventDefault()
+                                setWsContextMenu(true)
+                            }}
+                            className="flex text-sm text-blue-600 bg-blue-500/10 dark:bg-zinc-700/30 cursor-pointer dark:text-gray-400 rounded-lg px-2 py-0.5">
+                            {workspace.name}
+                            {wsContextMenu &&
+                                <WorkspaceContextMenu
+                                    workspaceName={workspace.name}
+                                    isOwner={workspace.role == "owner"}
+                                    canDelete={workspaces.length > 1}
+                                    onClose={() => setWsContextMenu(false)}
+                                    onRename={(newName) => {
+                                        renameWorkspace(workspace.id, newName)
+                                    }}
+                                    onManageMembers={() => {
+                                        setShowShare(true)
+                                    }}
+                                    onDelete={() => {
+                                        deleteWorkspace(workspace.id)
+                                    }}
+                                />
                             }
+                        </div>
+
+                    )}
+
+                    {user ? (
+                        <div className="relative">
+                            <button
+                                onClick={() => setEmailClicked(!emailClicked)}
+                                className="flex items-center gap-2 px-2 py-1.5 rounded-lg
+                                           hover:bg-gray-100 dark:hover:bg-zinc-700/50 transition-colors"
+                            >
+                                <UserAvatar
+                                    avatarUrl={profile?.avatar_url}
+                                    firstName={profile?.first_name}
+                                    lastName={profile?.last_name}
+                                    email={user.email}
+                                    userId={user.id}
+                                    size="sm"
+                                />
+                                <span className="text-sm text-gray-700 dark:text-gray-300 max-w-[120px] truncate hidden sm:block">
+                                    {getUserDisplayName(profile?.first_name, profile?.last_name, user.email)}
+                                </span>
+                                <ChevronDown size={12} className={`text-gray-400 transition-transform duration-200 ${emailClicked ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            {emailClicked && (
+                                <>
+                                    <div className="fixed inset-0 z-40" onClick={() => setEmailClicked(false)} />
+                                    <div className="absolute right-0 top-full mt-1.5 w-64 bg-white dark:bg-[#252525]
+                                                    border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50
+                                                    py-2 animate-in fade-in zoom-in-95 duration-100">
+                                        <div className="px-3 pb-2 mb-1 border-b border-gray-100 dark:border-gray-700/60">
+                                            <div className="flex items-center gap-2.5">
+                                                <UserAvatar
+                                                    avatarUrl={profile?.avatar_url}
+                                                    firstName={profile?.first_name}
+                                                    lastName={profile?.last_name}
+                                                    email={user.email}
+                                                    userId={user.id}
+                                                    size="lg"
+                                                />
+                                                <div className="min-w-0">
+                                                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                                                        {getUserDisplayName(profile?.first_name, profile?.last_name, user.email)}
+                                                    </div>
+                                                    {profile?.first_name && (
+                                                        <div className="text-xs text-gray-400 dark:text-gray-500 truncate">
+                                                            {user.email}
+                                                        </div>
+                                                    )}
+                                                    <div className="flex items-center gap-1 mt-0.5">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
+                                                        <span className="text-[10px] text-gray-400">Synced</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            onClick={() => {
+                                                setEmailClicked(false)
+                                                signOut()
+                                            }}
+                                            className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 dark:text-red-400
+                                                       hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-left"
+                                        >
+                                            <LogOut size={15} />
+                                            Sign out
+                                        </button>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     ) : (
                         <Link
                             href="/auth"
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400
+                                       hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20
+                                       rounded-lg transition-colors"
                         >
                             <LogIn size={14} />
                             Sign in
                         </Link>
                     )}
-
-                    <div className="text-[11px] text-gray-400 dark:text-gray-500 flex items-center gap-1">
-                        <span className={`w-1.5 h-1.5 rounded-full inline-block ${user ? 'bg-green-400' : 'bg-yellow-400'}`} />
-                        {user ? 'Synced' : isGuest ? 'Guest' : 'Local'}
-                    </div>
                 </div>
 
                 {/* Read-only banner for viewers */}
@@ -251,7 +349,7 @@ export default function Home() {
                         onUpdatePage={updatePage}
                     />
                 ) : (
-                    <div className="flex-1 flex items-center justify-center bg-white dark:bg-gray-900">
+                    <div className="flex-1 flex items-center justify-center bg-white dark:bg-zinc-900">
                         <div className="text-center">
                             <div className="text-6xl mb-4">📝</div>
                             <p className="text-gray-500 dark:text-gray-400 mb-6 text-lg">
@@ -293,6 +391,13 @@ export default function Home() {
                 onClose={() => setShowShare(false)}
             />
 
+            {/* Profile setup modal (post-signup) */}
+            <ProfileSetupModal
+                isOpen={needsProfileSetup}
+                onComplete={completeProfileSetup}
+                profile={profile}
+            />
+
             {/* Conflict toast */}
             {conflictPageId && (
                 <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-200">
@@ -303,6 +408,6 @@ export default function Home() {
                     </div>
                 </div>
             )}
-        </div>
+        </div >
     )
 }

@@ -68,7 +68,7 @@ const SYNC_DEBOUNCE_MS = 1500
 // ─── Provider ────────────────────────────────────────────────────────────────
 
 export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
-    const { user, isGuest, loading: authLoading } = useAuth()
+    const { user, isGuest, profile, loading: authLoading } = useAuth()
 
     const [workspaces, setWorkspaces] = useState<WorkspaceData[]>([])
     const [currentWsId, setCurrentWsId] = useState<string | null>(null)
@@ -84,6 +84,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     const wsChannelRef = useRef<RealtimeChannel | null>(null)
     const presenceChannelRef = useRef<RealtimeChannel | null>(null)
     const currentUserIdRef = useRef<string | null>(null)
+    const hasLoadedOnceRef = useRef(false)
 
     currentUserIdRef.current = user?.id ?? null
 
@@ -141,22 +142,31 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         presenceChannelRef.current = subscribeToPresence(
             wsId,
             user.id,
-            user.email ?? 'unknown',
+            {
+                email: user.email ?? 'unknown',
+                first_name: profile?.first_name,
+                last_name: profile?.last_name,
+                avatar_url: profile?.avatar_url,
+            },
             (users) => setOnlineUsers(users)
         )
-    }, [user, isGuest, cleanupRealtimeChannels])
+    }, [user, isGuest, profile, cleanupRealtimeChannels])
 
     // ─── Initial load ────────────────────────────────────────
 
+
+
     useEffect(() => {
         if (authLoading) return
-
         let cancelled = false
-
         const loadData = async () => {
-            setLoading(true)
+            if (!hasLoadedOnceRef.current) {
+                setLoading(true)
+            }
+
             try {
                 if (user && !isGuest) {
+
                     // Try migration first
                     const migrated = await migrateOldCloudData(user.id)
                     let wsList = migrated ?? await fetchUserWorkspaces(user.id)
@@ -194,6 +204,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
                         if (!cancelled) setInvites(invs)
                     }
                 } else {
+
                     const local = loadAppData()
                     const wsList = Object.values(local.workspaces).map((w) => ({
                         id: w.id,
@@ -226,9 +237,13 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
                     setPages(fallbackWs.pages ?? {})
                 }
             } finally {
-                if (!cancelled) setLoading(false)
+                if (!cancelled) {
+                    setLoading(false)
+                    hasLoadedOnceRef.current = true
+                }
             }
         }
+
 
         loadData()
         return () => { cancelled = true }

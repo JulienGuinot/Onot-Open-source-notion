@@ -3,7 +3,9 @@
 import { useState } from 'react'
 import { X, Link2, Copy, Check, Trash2, ChevronDown, UserPlus, Shield, Eye, Edit3 } from 'lucide-react'
 import { useWorkspace } from '@/providers/WorkspaceProvider'
+import { useAuth } from '@/providers/AuthProvider'
 import { MemberRole } from '@/lib/types'
+import UserAvatar, { getUserDisplayName } from './UserAvatar'
 
 interface ShareModalProps {
     isOpen: boolean
@@ -23,6 +25,7 @@ const ROLE_ICONS: Record<MemberRole, React.ReactNode> = {
 }
 
 export default function ShareModal({ isOpen, onClose }: ShareModalProps) {
+    const { user } = useAuth()
     const {
         workspace, members, invites, userRole,
         createInviteLink, revokeInviteLink,
@@ -57,6 +60,7 @@ export default function ShareModal({ isOpen, onClose }: ShareModalProps) {
     }
 
     const handleRevokeInvite = async (inviteId: string) => {
+        console.log("Revoking", inviteId)
         await revokeInviteLink(inviteId)
         setGeneratedLink(null)
     }
@@ -194,82 +198,102 @@ export default function ShareModal({ isOpen, onClose }: ShareModalProps) {
                         <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
                             Members ({members.length})
                         </div>
-                        <div className="space-y-1 max-h-60 overflow-y-auto">
-                            {members.map((member) => (
-                                <div
-                                    key={member.user_id}
-                                    className="flex items-center justify-between px-3 py-2.5 rounded-lg
-                                               hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-violet-500
-                                                        flex items-center justify-center text-white text-xs font-semibold">
-                                            {(member.email ?? member.user_id.slice(0, 2)).charAt(0).toUpperCase()}
-                                        </div>
-                                        <div>
-                                            <div className="text-sm text-gray-800 dark:text-gray-200">
-                                                {member.email ?? member.user_id.slice(0, 8) + '...'}
-                                            </div>
-                                        </div>
-                                    </div>
+                        <div className="space-y-0.5 max-h-60 overflow-y-auto">
+                            {members.map((member) => {
+                                const p = member.profile
+                                const isMe = member.user_id === user?.id
+                                const displayName = getUserDisplayName(p?.first_name, p?.last_name, p?.email ?? member.email)
 
-                                    <div className="flex items-center gap-2">
-                                        {isOwner && member.role !== 'owner' ? (
-                                            <div className="relative">
-                                                <button
-                                                    onClick={() => setRoleMenuOpen(
-                                                        roleMenuOpen === member.user_id ? null : member.user_id
+                                return (
+                                    <div
+                                        key={member.user_id}
+                                        className="flex items-center justify-between px-3 py-2.5 rounded-lg
+                                                   hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group"
+                                    >
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <UserAvatar
+                                                avatarUrl={p?.avatar_url}
+                                                firstName={p?.first_name}
+                                                lastName={p?.last_name}
+                                                email={p?.email ?? member.email}
+                                                userId={member.user_id}
+                                                size="md"
+                                            />
+                                            <div className="min-w-0">
+                                                <div className="text-sm text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
+                                                    <span className="truncate">{displayName}</span>
+                                                    {isMe && (
+                                                        <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium shrink-0">
+                                                            (You)
+                                                        </span>
                                                     )}
-                                                    className="flex items-center gap-1 px-2 py-1 text-xs rounded-md
-                                                               bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400
-                                                               hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                                                >
-                                                    {ROLE_ICONS[member.role]}
-                                                    {ROLE_LABELS[member.role]}
-                                                    <ChevronDown size={10} />
-                                                </button>
-
-                                                {roleMenuOpen === member.user_id && (
-                                                    <div className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-[#252525]
-                                                                    border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-50 py-1">
-                                                        {(['editor', 'viewer'] as const).map((r) => (
-                                                            <button
-                                                                key={r}
-                                                                onClick={() => handleChangeRole(member.user_id, r)}
-                                                                className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left
-                                                                           hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
-                                                            >
-                                                                {ROLE_ICONS[r]}
-                                                                <span className="text-gray-700 dark:text-gray-300">{ROLE_LABELS[r]}</span>
-                                                                {member.role === r && <Check size={12} className="ml-auto text-blue-500" />}
-                                                            </button>
-                                                        ))}
-                                                        <div className="border-t border-gray-200 dark:border-gray-700 mt-1 pt-1">
-                                                            <button
-                                                                onClick={() => {
-                                                                    setRoleMenuOpen(null)
-                                                                    handleRemoveMember(member.user_id)
-                                                                }}
-                                                                className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left
-                                                                           text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                                                            >
-                                                                <Trash2 size={14} />
-                                                                Remove
-                                                            </button>
-                                                        </div>
+                                                </div>
+                                                {p?.first_name && p?.email && (
+                                                    <div className="text-xs text-gray-400 dark:text-gray-500 truncate">
+                                                        {p.email}
                                                     </div>
                                                 )}
                                             </div>
-                                        ) : (
-                                            <span className="flex items-center gap-1 px-2 py-1 text-xs rounded-md
-                                                             bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-                                                {ROLE_ICONS[member.role]}
-                                                {ROLE_LABELS[member.role]}
-                                            </span>
-                                        )}
+                                        </div>
+
+                                        <div className="flex items-center gap-2 shrink-0">
+                                            {isOwner && member.role !== 'owner' ? (
+                                                <div className="relative">
+                                                    <button
+                                                        onClick={() => setRoleMenuOpen(
+                                                            roleMenuOpen === member.user_id ? null : member.user_id
+                                                        )}
+                                                        className="flex items-center gap-1 px-2 py-1 text-xs rounded-md
+                                                                   bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400
+                                                                   hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                                                    >
+                                                        {ROLE_ICONS[member.role]}
+                                                        {ROLE_LABELS[member.role]}
+                                                        <ChevronDown size={10} />
+                                                    </button>
+
+                                                    {roleMenuOpen === member.user_id && (
+                                                        <div className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-[#252525]
+                                                                        border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-50 py-1">
+                                                            {(['editor', 'viewer'] as const).map((r) => (
+                                                                <button
+                                                                    key={r}
+                                                                    onClick={() => handleChangeRole(member.user_id, r)}
+                                                                    className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left
+                                                                               hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors"
+                                                                >
+                                                                    {ROLE_ICONS[r]}
+                                                                    <span className="text-gray-700 dark:text-gray-300">{ROLE_LABELS[r]}</span>
+                                                                    {member.role === r && <Check size={12} className="ml-auto text-blue-500" />}
+                                                                </button>
+                                                            ))}
+                                                            <div className="border-t border-gray-200 dark:border-gray-700 mt-1 pt-1">
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setRoleMenuOpen(null)
+                                                                        handleRemoveMember(member.user_id)
+                                                                    }}
+                                                                    className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left
+                                                                               text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                                                >
+                                                                    <Trash2 size={14} />
+                                                                    Remove
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <span className="flex items-center gap-1 px-2 py-1 text-xs rounded-md
+                                                                 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                                                    {ROLE_ICONS[member.role]}
+                                                    {ROLE_LABELS[member.role]}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                )
+                            })}
                         </div>
                     </div>
                 </div>

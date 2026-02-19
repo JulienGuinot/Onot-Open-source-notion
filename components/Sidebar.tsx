@@ -15,8 +15,10 @@ import {
     Edit3,
     Eye,
 } from 'lucide-react'
-import { Page, WorkspaceData, MemberRole } from '@/lib/types'
+import { Page, WorkspaceData, MemberRole, UserProfile } from '@/lib/types'
 import { PageItem } from './pages/PageItem'
+import { WorkspaceContextMenu } from './WorkspaceContextMenu'
+import UserAvatar, { getUserDisplayName } from './UserAvatar'
 
 interface SidebarProps {
     pages: Record<string, Page>
@@ -27,6 +29,9 @@ interface SidebarProps {
     workspaces: WorkspaceData[]
     currentWorkspaceId: string
     userRole: MemberRole | null
+    profile?: UserProfile | null
+    userEmail?: string | null
+    userId?: string
     onSelectPage: (pageId: string) => void
     onCreatePage: (parentId?: string | null) => void
     onDeletePage: (pageId: string) => void
@@ -38,6 +43,7 @@ interface SidebarProps {
     onCreateWorkspace: (name: string) => void
     onDeleteWorkspace: (id: string) => void
     onRenameWorkspace: (id: string, name: string) => void
+    onRenamePage: (pageId: string, newTitle: string) => void
     expandedPages: Set<string>
     onToggleExpand: (pageId: string) => void
 }
@@ -57,6 +63,9 @@ export default function Sidebar({
     workspaces,
     currentWorkspaceId,
     userRole,
+    profile,
+    userEmail,
+    userId,
     onSelectPage,
     onCreatePage,
     onDeletePage,
@@ -68,6 +77,7 @@ export default function Sidebar({
     onCreateWorkspace,
     onDeleteWorkspace,
     onRenameWorkspace,
+    onRenamePage,
     expandedPages,
     onToggleExpand,
 }: SidebarProps) {
@@ -78,6 +88,7 @@ export default function Sidebar({
     const [wsDropdownOpen, setWsDropdownOpen] = useState(false)
     const [newWsName, setNewWsName] = useState('')
     const [showNewWsInput, setShowNewWsInput] = useState(false)
+    const [wsContextMenu, setWsContextMenu] = useState<{ x: number; y: number } | null>(null)
     const dropdownRef = useRef<HTMLDivElement>(null)
     const newWsInputRef = useRef<HTMLInputElement>(null)
 
@@ -161,6 +172,11 @@ export default function Sidebar({
                     <div className="relative" ref={dropdownRef}>
                         <button
                             onClick={() => setWsDropdownOpen(!wsDropdownOpen)}
+                            onContextMenu={(e) => {
+                                e.preventDefault()
+                                setWsDropdownOpen(false)
+                                setWsContextMenu({ x: e.clientX, y: e.clientY })
+                            }}
                             className="flex items-center gap-1.5 hover:bg-gray-100 dark:hover:bg-gray-800/60
                                        rounded-md px-1.5 py-1 transition-colors group"
                         >
@@ -232,6 +248,26 @@ export default function Sidebar({
                             </div>
                         )}
                     </div>
+
+                    {wsContextMenu && (
+                        <WorkspaceContextMenu
+                            x={wsContextMenu.x}
+                            y={wsContextMenu.y}
+                            workspaceName={workspaceName}
+                            isOwner={isOwner}
+                            canDelete={workspaces.length > 1}
+                            onClose={() => setWsContextMenu(null)}
+                            onRename={(newName) => {
+                                onRenameWorkspace(currentWorkspaceId, newName)
+                            }}
+                            onManageMembers={() => {
+                                onShowShare?.()
+                            }}
+                            onDelete={() => {
+                                onDeleteWorkspace(currentWorkspaceId)
+                            }}
+                        />
+                    )}
 
                     <div className="flex items-center gap-0.5">
                         {isOwner && onShowShare && (
@@ -365,9 +401,11 @@ export default function Sidebar({
                                 depth={0}
                                 isSelected={currentPageId === pageId}
                                 expandedPages={expandedPages}
+                                canEdit={canEdit}
                                 onSelectPage={onSelectPage}
                                 onCreatePage={(parentId) => onCreatePage(parentId)}
                                 onDeletePage={onDeletePage}
+                                onRenamePage={onRenamePage}
                                 onToggleExpand={onToggleExpand}
                                 currentPageId={currentPageId || undefined}
                             />
@@ -396,7 +434,7 @@ export default function Sidebar({
                 </div>
             </div>
 
-            {/* Footer buttons */}
+            {/* Footer */}
             <div className="p-2 border-t border-gray-200/60 dark:border-gray-800/60 space-y-0.5">
                 {canEdit && (
                     <button
@@ -434,6 +472,32 @@ export default function Sidebar({
                             ⌘?
                         </kbd>
                     </button>
+                )}
+
+                {/* Current user */}
+                {userId && (
+                    <div className="flex items-center gap-2.5 px-2.5 py-2 mt-1 rounded-lg
+                                    bg-gray-50/80 dark:bg-gray-800/30">
+                        <UserAvatar
+                            avatarUrl={profile?.avatar_url}
+                            firstName={profile?.first_name}
+                            lastName={profile?.last_name}
+                            email={userEmail}
+                            userId={userId}
+                            size="sm"
+                        />
+                        <div className="min-w-0 flex-1">
+                            <div className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">
+                                {getUserDisplayName(profile?.first_name, profile?.last_name, userEmail)}
+                            </div>
+                            {profile?.first_name && userEmail && (
+                                <div className="text-[10px] text-gray-400 dark:text-gray-500 truncate">
+                                    {userEmail}
+                                </div>
+                            )}
+                        </div>
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-400 shrink-0" />
+                    </div>
                 )}
             </div>
         </div>
