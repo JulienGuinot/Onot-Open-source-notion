@@ -1,10 +1,12 @@
 import { WorkspaceData, AppData, Page } from '@/lib/types'
 import { generateId } from '@/lib/utils'
 
-const APP_STORAGE_KEY = 'onot-app-v3'
-const LEGACY_STORAGE_KEY = 'onot-workspace-v2'
+const APP_STORAGE_KEY = 'onot-app-v4'
+const LEGACY_V3_KEY = 'onot-app-v3'
+const LEGACY_V2_KEY = 'onot-workspace-v2'
+const CURRENT_WS_KEY = 'onot-current-workspace'
 
-// ─── App Data (multi-workspace) ──────────────────────────────
+// ─── App Data (multi-workspace with embedded pages) ──────────
 
 export const loadAppData = (): AppData => {
     try {
@@ -13,14 +15,23 @@ export const loadAppData = (): AppData => {
         const data = localStorage.getItem(APP_STORAGE_KEY)
         if (data) return JSON.parse(data)
 
-        // Migrate from legacy single-workspace format
-        const legacy = localStorage.getItem(LEGACY_STORAGE_KEY)
-        if (legacy) {
-            const old = JSON.parse(legacy) as Omit<WorkspaceData, 'id' | 'name'>
-            const ws: WorkspaceData = { id: 'default', name: 'My Workspace', ...old }
+        // Migrate from v3 format (pages were inside WorkspaceData directly)
+        const v3 = localStorage.getItem(LEGACY_V3_KEY)
+        if (v3) {
+            const old = JSON.parse(v3) as any
+            const migrated = migrateV3ToV4(old)
+            localStorage.setItem(APP_STORAGE_KEY, JSON.stringify(migrated))
+            return migrated
+        }
+
+        // Migrate from v2 (single workspace, no multi-workspace support)
+        const v2 = localStorage.getItem(LEGACY_V2_KEY)
+        if (v2) {
+            const old = JSON.parse(v2)
+            const ws = { id: 'default', name: 'My Workspace', ...old }
             const appData: AppData = {
                 currentWorkspaceId: 'default',
-                workspaces: { default: ws },
+                workspaces: { default: { ...extractWorkspaceData(ws), pages: ws.pages ?? {} } },
             }
             localStorage.setItem(APP_STORAGE_KEY, JSON.stringify(appData))
             return appData
@@ -29,6 +40,38 @@ export const loadAppData = (): AppData => {
         console.error('Failed to load app data:', error)
     }
     return getDefaultAppData()
+}
+
+/**
+ * Migrate v3 (old AppData where WorkspaceData had `pages` directly) to v4.
+ * v4 keeps the same shape but uses a new storage key so we know migration ran.
+ */
+function migrateV3ToV4(old: any): AppData {
+    const workspaces: AppData['workspaces'] = {}
+
+    for (const [id, ws] of Object.entries<any>(old.workspaces ?? {})) {
+        workspaces[id] = {
+            id: ws.id ?? id,
+            name: ws.name ?? 'My Workspace',
+            pageOrder: ws.pageOrder ?? [],
+            darkMode: ws.darkMode ?? false,
+            pages: ws.pages ?? {},
+        }
+    }
+
+    return {
+        currentWorkspaceId: old.currentWorkspaceId ?? Object.keys(workspaces)[0] ?? 'default',
+        workspaces,
+    }
+}
+
+function extractWorkspaceData(ws: any): WorkspaceData {
+    return {
+        id: ws.id,
+        name: ws.name ?? 'My Workspace',
+        pageOrder: ws.pageOrder ?? [],
+        darkMode: ws.darkMode ?? false,
+    }
 }
 
 export const saveAppData = (appData: AppData): void => {
@@ -43,28 +86,69 @@ export const saveAppData = (appData: AppData): void => {
 
 const getDefaultAppData = (): AppData => {
     const ws = getDefaultWorkspace()
+    const pages = getDefaultPages()
     return {
         currentWorkspaceId: ws.id,
-        workspaces: { [ws.id]: ws },
+        workspaces: {
+            [ws.id]: { ...ws, pages },
+        },
     }
 }
 
-// ─── Backward-compat helpers used by WorkspaceProvider ───────
+// ─── Current workspace preference ────────────────────────────
 
-export const loadWorkspace = (): WorkspaceData => {
-    const appData = loadAppData()
-    return appData.workspaces[appData.currentWorkspaceId] ?? getDefaultWorkspace()
+export const loadCurrentWorkspaceId = (): string | null => {
+    try {
+        if (typeof window === 'undefined') return null
+        return localStorage.getItem(CURRENT_WS_KEY)
+    } catch {
+        return null
+    }
 }
 
-export const saveWorkspace = (workspace: WorkspaceData): void => {
+export const saveCurrentWorkspaceId = (id: string): void => {
+    try {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem(CURRENT_WS_KEY, id)
+        }
+    } catch { /* noop */ }
+}
+
+// ─── Helpers for WorkspaceProvider (guest mode) ──────────────
+
+export const loadWorkspacePages = (wsId: string): Record<string, Page> => {
     const appData = loadAppData()
-    appData.workspaces[workspace.id] = workspace
+    return appData.workspaces[wsId]?.pages ?? {}
+}
+
+export const saveWorkspacePages = (wsId: string, pages: Record<string, Page>): void => {
+    const appData = loadAppData()
+    const ws = appData.workspaces[wsId]
+    if (!ws) return
+    ws.pages = pages
+    saveAppData(appData)
+}
+
+export const saveWorkspaceSettings = (wsId: string, settings: Partial<WorkspaceData>): void => {
+    const appData = loadAppData()
+    const ws = appData.workspaces[wsId]
+    if (!ws) return
+    if (settings.name !== undefined) ws.name = settings.name
+    if (settings.pageOrder !== undefined) ws.pageOrder = settings.pageOrder
+    if (settings.darkMode !== undefined) ws.darkMode = settings.darkMode
     saveAppData(appData)
 }
 
 // ─── Defaults ────────────────────────────────────────────────
 
-const getDefaultWorkspace = (): WorkspaceData => {
+const getDefaultWorkspace = (): WorkspaceData => ({
+    id: 'default',
+    name: 'My Workspace',
+    pageOrder: ['welcome'],
+    darkMode: false,
+})
+
+const getDefaultPages = (): Record<string, Page> => {
     const welcomePage: Page = {
         id: 'welcome',
         title: 'Welcome to Onot',
@@ -110,13 +194,7 @@ const getDefaultWorkspace = (): WorkspaceData => {
         updatedAt: Date.now(),
     }
 
-    return {
-        id: 'default',
-        name: 'My Workspace',
-        pages: { welcome: welcomePage },
-        pageOrder: ['welcome'],
-        darkMode: false,
-    }
+    return { welcome: welcomePage }
 }
 
 export const createEmptyWorkspace = (name: string): WorkspaceData => {
@@ -124,7 +202,6 @@ export const createEmptyWorkspace = (name: string): WorkspaceData => {
     return {
         id,
         name,
-        pages: {},
         pageOrder: [],
         darkMode: false,
     }

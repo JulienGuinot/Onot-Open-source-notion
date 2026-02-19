@@ -4,16 +4,18 @@ import { useState, useRef, useEffect } from 'react'
 import {
     Plus,
     Search,
-    Star,
     Moon,
     Sun,
     Keyboard,
-    Sparkles,
     ChevronDown,
     Check,
     Trash2,
+    Share2,
+    Shield,
+    Edit3,
+    Eye,
 } from 'lucide-react'
-import { Page, WorkspaceData } from '@/lib/types'
+import { Page, WorkspaceData, MemberRole } from '@/lib/types'
 import { PageItem } from './pages/PageItem'
 
 interface SidebarProps {
@@ -24,18 +26,26 @@ interface SidebarProps {
     workspaceName: string
     workspaces: WorkspaceData[]
     currentWorkspaceId: string
+    userRole: MemberRole | null
     onSelectPage: (pageId: string) => void
     onCreatePage: (parentId?: string | null) => void
     onDeletePage: (pageId: string) => void
     onToggleSearch: () => void
     onToggleDarkMode: () => void
     onShowShortcuts?: () => void
+    onShowShare?: () => void
     onSwitchWorkspace: (id: string) => void
     onCreateWorkspace: (name: string) => void
     onDeleteWorkspace: (id: string) => void
     onRenameWorkspace: (id: string, name: string) => void
     expandedPages: Set<string>
     onToggleExpand: (pageId: string) => void
+}
+
+const ROLE_ICON: Record<MemberRole, React.ReactNode> = {
+    owner: <Shield size={10} className="text-amber-500" />,
+    editor: <Edit3 size={10} className="text-blue-500" />,
+    viewer: <Eye size={10} className="text-gray-400" />,
 }
 
 export default function Sidebar({
@@ -46,12 +56,14 @@ export default function Sidebar({
     workspaceName,
     workspaces,
     currentWorkspaceId,
+    userRole,
     onSelectPage,
     onCreatePage,
     onDeletePage,
     onToggleSearch,
     onToggleDarkMode,
     onShowShortcuts,
+    onShowShare,
     onSwitchWorkspace,
     onCreateWorkspace,
     onDeleteWorkspace,
@@ -68,6 +80,13 @@ export default function Sidebar({
     const [showNewWsInput, setShowNewWsInput] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
     const newWsInputRef = useRef<HTMLInputElement>(null)
+
+    const canEdit = userRole !== 'viewer'
+    const isOwner = userRole === 'owner'
+
+    // Group workspaces: owned vs shared
+    const ownedWorkspaces = workspaces.filter((ws) => ws.role === 'owner' || !ws.role)
+    const sharedWorkspaces = workspaces.filter((ws) => ws.role && ws.role !== 'owner')
 
     useEffect(() => {
         if (!wsDropdownOpen) return
@@ -95,6 +114,44 @@ export default function Sidebar({
         setWsDropdownOpen(false)
     }
 
+    const renderWorkspaceItem = (ws: WorkspaceData) => (
+        <button
+            key={ws.id}
+            onClick={() => {
+                onSwitchWorkspace(ws.id)
+                setWsDropdownOpen(false)
+            }}
+            className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left
+                       hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors group/ws"
+        >
+            <span className="truncate flex-1 text-gray-700 dark:text-gray-300">
+                {ws.name}
+            </span>
+            {ws.role && ws.role !== 'owner' && (
+                <span className="flex items-center gap-0.5 text-[10px] text-gray-400">
+                    {ROLE_ICON[ws.role]}
+                </span>
+            )}
+            {ws.id === currentWorkspaceId && (
+                <Check size={14} className="text-blue-500 flex-shrink-0" />
+            )}
+            {ws.id !== currentWorkspaceId && (ws.role === 'owner' || !ws.role) && workspaces.length > 1 && (
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation()
+                        if (confirm(`Delete workspace "${ws.name}"?`)) {
+                            onDeleteWorkspace(ws.id)
+                        }
+                    }}
+                    className="p-0.5 rounded hover:bg-red-100 dark:hover:bg-red-900/30
+                               opacity-0 group-hover/ws:opacity-100 transition-opacity"
+                >
+                    <Trash2 size={12} className="text-red-400" />
+                </button>
+            )}
+        </button>
+    )
+
     return (
         <div className="w-60 bg-[#fbfbfa] dark:bg-[#191919] border-r border-gray-200/80
                     dark:border-gray-800 flex flex-col h-screen select-none">
@@ -110,50 +167,35 @@ export default function Sidebar({
                             <h1 className="font-semibold text-sm text-gray-800 dark:text-gray-200 truncate max-w-[140px]">
                                 {workspaceName || 'Workspace'}
                             </h1>
+                            {userRole && userRole !== 'owner' && (
+                                <span className="flex items-center">{ROLE_ICON[userRole]}</span>
+                            )}
                             <ChevronDown size={12} className="text-gray-400 flex-shrink-0" />
                         </button>
 
                         {wsDropdownOpen && (
                             <div className="absolute left-0 top-full mt-1 w-56 bg-white dark:bg-[#252525]
                                             border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-50 py-1">
+                                {/* Owned workspaces */}
                                 <div className="px-3 py-1.5">
                                     <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
-                                        Workspaces
+                                        My Workspaces
                                     </span>
                                 </div>
-                                {workspaces.map((ws) => (
-                                    <button
-                                        key={ws.id}
-                                        onClick={() => {
-                                            onSwitchWorkspace(ws.id)
-                                            setWsDropdownOpen(false)
-                                        }}
-                                        className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-left
-                                                   hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors group/ws"
-                                    >
+                                {ownedWorkspaces.map(renderWorkspaceItem)}
 
-                                        <span className="truncate flex-1 text-gray-700 dark:text-gray-300">
-                                            {ws.name}
-                                        </span>
-                                        {ws.id === currentWorkspaceId && (
-                                            <Check size={14} className="text-blue-500 flex-shrink-0" />
-                                        )}
-                                        {ws.id !== currentWorkspaceId && workspaces.length > 1 && (
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation()
-                                                    if (confirm(`Delete workspace "${ws.name}"?`)) {
-                                                        onDeleteWorkspace(ws.id)
-                                                    }
-                                                }}
-                                                className="p-0.5 rounded hover:bg-red-100 dark:hover:bg-red-900/30
-                                                           opacity-0 group-hover/ws:opacity-100 transition-opacity"
-                                            >
-                                                <Trash2 size={12} className="text-red-400" />
-                                            </button>
-                                        )}
-                                    </button>
-                                ))}
+                                {/* Shared workspaces */}
+                                {sharedWorkspaces.length > 0 && (
+                                    <>
+                                        <div className="border-t border-gray-200 dark:border-gray-700 mt-1 pt-1" />
+                                        <div className="px-3 py-1.5">
+                                            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
+                                                Shared with me
+                                            </span>
+                                        </div>
+                                        {sharedWorkspaces.map(renderWorkspaceItem)}
+                                    </>
+                                )}
 
                                 <div className="border-t border-gray-200 dark:border-gray-700 mt-1 pt-1">
                                     {showNewWsInput ? (
@@ -191,18 +233,30 @@ export default function Sidebar({
                         )}
                     </div>
 
-                    <button
-                        onClick={onToggleDarkMode}
-                        className="p-1.5 hover:bg-gray-200/70 dark:hover:bg-gray-700/70 rounded-md
-                                   transition-all duration-150 group"
-                        title={darkMode ? 'Light mode' : 'Dark mode'}
-                    >
-                        {darkMode ? (
-                            <Sun size={14} className="text-gray-400 group-hover:text-amber-500 transition-colors" />
-                        ) : (
-                            <Moon size={14} className="text-gray-400 group-hover:text-blue-500 transition-colors" />
+                    <div className="flex items-center gap-0.5">
+                        {isOwner && onShowShare && (
+                            <button
+                                onClick={onShowShare}
+                                className="p-1.5 hover:bg-gray-200/70 dark:hover:bg-gray-700/70 rounded-md
+                                           transition-all duration-150 group"
+                                title="Share workspace"
+                            >
+                                <Share2 size={14} className="text-gray-400 group-hover:text-blue-500 transition-colors" />
+                            </button>
                         )}
-                    </button>
+                        <button
+                            onClick={onToggleDarkMode}
+                            className="p-1.5 hover:bg-gray-200/70 dark:hover:bg-gray-700/70 rounded-md
+                                       transition-all duration-150 group"
+                            title={darkMode ? 'Light mode' : 'Dark mode'}
+                        >
+                            {darkMode ? (
+                                <Sun size={14} className="text-gray-400 group-hover:text-amber-500 transition-colors" />
+                            ) : (
+                                <Moon size={14} className="text-gray-400 group-hover:text-blue-500 transition-colors" />
+                            )}
+                        </button>
+                    </div>
                 </div>
 
                 <button
@@ -282,17 +336,19 @@ export default function Sidebar({
                                      uppercase tracking-wider flex-1 text-left">
                         Pages
                     </span>
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            onCreatePage(null)
-                        }}
-                        className="p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 
-                                   opacity-0 group-hover:opacity-100 transition-all"
-                        title="New page"
-                    >
-                        <Plus size={12} className="text-gray-400" />
-                    </button>
+                    {canEdit && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation()
+                                onCreatePage(null)
+                            }}
+                            className="p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 
+                                       opacity-0 group-hover:opacity-100 transition-all"
+                            title="New page"
+                        >
+                            <Plus size={12} className="text-gray-400" />
+                        </button>
+                    )}
                 </button>
 
                 <div className={`overflow-hidden transition-all duration-200 ${pagesExpanded ? 'max-h-[9999px]' : 'max-h-0'}`}>
@@ -326,13 +382,15 @@ export default function Sidebar({
                             <p className="text-xs text-gray-400 dark:text-gray-500 text-center mb-3">
                                 No pages yet
                             </p>
-                            <button
-                                onClick={() => onCreatePage(null)}
-                                className="text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400 
-                                           dark:hover:text-blue-300 font-medium transition-colors"
-                            >
-                                Create your first page
-                            </button>
+                            {canEdit && (
+                                <button
+                                    onClick={() => onCreatePage(null)}
+                                    className="text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400 
+                                               dark:hover:text-blue-300 font-medium transition-colors"
+                                >
+                                    Create your first page
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>
@@ -340,22 +398,24 @@ export default function Sidebar({
 
             {/* Footer buttons */}
             <div className="p-2 border-t border-gray-200/60 dark:border-gray-800/60 space-y-0.5">
-                <button
-                    onClick={() => onCreatePage(null)}
-                    className="w-full flex items-center gap-2.5 px-2.5 py-2 text-sm
-                             text-gray-600 dark:text-gray-400
-                             hover:bg-gray-100/80 dark:hover:bg-gray-800/50 rounded-lg
-                             transition-all duration-150 group"
-                >
-                    <div className="w-5 h-5 rounded-md bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center
-                                    group-hover:bg-blue-500 transition-colors">
-                        <Plus size={14} className="text-blue-500 group-hover:text-white transition-colors" />
-                    </div>
-                    <span className="flex-1 text-left">New Page</span>
-                    <kbd className="text-[10px] bg-gray-100 dark:bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded border border-gray-200/50 dark:border-gray-700/50">
-                        ⌘N
-                    </kbd>
-                </button>
+                {canEdit && (
+                    <button
+                        onClick={() => onCreatePage(null)}
+                        className="w-full flex items-center gap-2.5 px-2.5 py-2 text-sm
+                                 text-gray-600 dark:text-gray-400
+                                 hover:bg-gray-100/80 dark:hover:bg-gray-800/50 rounded-lg
+                                 transition-all duration-150 group"
+                    >
+                        <div className="w-5 h-5 rounded-md bg-blue-500/10 dark:bg-blue-500/20 flex items-center justify-center
+                                        group-hover:bg-blue-500 transition-colors">
+                            <Plus size={14} className="text-blue-500 group-hover:text-white transition-colors" />
+                        </div>
+                        <span className="flex-1 text-left">New Page</span>
+                        <kbd className="text-[10px] bg-gray-100 dark:bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded border border-gray-200/50 dark:border-gray-700/50">
+                            ⌘N
+                        </kbd>
+                    </button>
+                )}
 
                 {onShowShortcuts && (
                     <button

@@ -151,17 +151,49 @@ export interface Page {
     updatedAt: number;
 }
 
+// ─── Collaboration ────────────────────────────────────────────
+
+export type MemberRole = 'owner' | 'editor' | 'viewer';
+
+export interface WorkspaceMember {
+    workspace_id: string;
+    user_id: string;
+    role: MemberRole;
+    created_at: string;
+    email?: string;
+}
+
+export interface WorkspaceInvite {
+    id: string;
+    workspace_id: string;
+    token: string;
+    role: Exclude<MemberRole, 'owner'>;
+    created_by: string;
+    expires_at: string | null;
+    created_at: string;
+}
+
+export interface PresenceUser {
+    user_id: string;
+    email: string;
+    online_at: string;
+}
+
 // ─── Workspace ────────────────────────────────────────────────
 
 export interface WorkspaceData {
     id: string;
     name: string;
-    pages: Record<string, Page>;
     pageOrder: string[];
     darkMode?: boolean;
+    role?: MemberRole;
 }
 
+/**
+ * Local-storage format embeds pages inside each workspace for offline use.
+ * The cloud schema stores pages in a separate `pages` table.
+ */
 export interface AppData {
     currentWorkspaceId: string;
-    workspaces: Record<string, WorkspaceData>;
+    workspaces: Record<string, WorkspaceData & { pages: Record<string, Page> }>;
 }
