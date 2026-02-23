@@ -31,11 +31,11 @@ const MARKDOWN_SHORTCUTS: Record<string, BlockType> = {
     '[]': 'todo',
     '[ ]': 'todo',
     '[x]': 'todo',
-    '>': 'quote',
+    '>': 'toggle',
     '```': 'code',
     '---': 'divider',
     '***': 'divider',
-    '>!': 'callout',
+    '!': 'callout',
 }
 
 const MULTI_LINE_BLOCK_TYPES: BlockType[] = ['code', 'quote']
