@@ -19,6 +19,7 @@ import {
     Youtube,
     Paperclip,
     LucideIcon,
+    Map,
 } from 'lucide-react'
 
 export interface SlashMenuProps {
@@ -149,6 +150,13 @@ const menuItems: MenuItem[] = [
         keywords: ['separator', 'line', 'hr', 'horizontal', 'séparateur'],
         description: 'Visual divider'
     },
+    {
+        label: "Map",
+        type: "map",
+        icon: Map,
+        keywords: ["map", "lieu", "place"],
+        description: "Embed a google maps place"
+    }
 ]
 
 export function SlashMenu({ onClose, onSelect, position, searchQuery = '' }: SlashMenuProps) {

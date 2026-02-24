@@ -17,6 +17,7 @@ export type BlockType =
     | 'table'
     | 'youtube'
     | 'file'
+    | 'map'
 
 // ─── Table / Database Types ───────────────────────────────────
 
@@ -127,6 +128,8 @@ export interface Block {
     imageCaption?: string;
     // YouTube specific
     youtubeUrl?: string;
+    //Maps specific
+    mapUrl?: string
     // File specific
     fileUrl?: string;
     fileName?: string;

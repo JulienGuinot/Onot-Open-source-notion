@@ -307,12 +307,15 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     }, [user, isGuest, currentWsId])
 
     const syncNow = useCallback(async () => {
+        console.log('Trying to sync now')
         if (!user || isGuest || !currentWsId) return
         if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current)
         setSyncing(true)
+        console.log("Syncing...")
         try {
             for (const page of Object.values(pages)) {
                 await savePageToCloud(currentWsId, page, user.id)
+                console.log("page saved to cloud", page.title)
             }
             if (workspace) {
                 await updateWorkspaceInCloud(currentWsId, {
@@ -320,9 +323,13 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
                     darkMode: workspace.darkMode,
                     pageOrder: workspace.pageOrder,
                 })
+                console.log("workspace saved to cloud", workspace.name)
+
                 setHasUnsavedChanges(false)
 
             }
+        } catch (err: any) {
+            console.error("An error occured", err)
         } finally {
             setSyncing(false)
         }
