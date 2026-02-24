@@ -14,6 +14,7 @@ import {
     serializeBlocksForClipboard,
     deserializeBlocksFromClipboard,
 } from '@/lib/blockUtils'
+import { useWorkspace } from '@/providers/WorkspaceProvider'
 
 // Module-level clipboard for internal block copy/paste
 let internalClipboard: Block[] | null = null
@@ -38,6 +39,8 @@ export default function PageEditor({
     // ─── Multi-block selection ──────────────────────────────────
     const [selectedBlockIds, setSelectedBlockIds] = useState<Set<string>>(new Set())
     const [selectionAnchor, setSelectionAnchor] = useState<string | null>(null)
+
+    const { syncNow } = useWorkspace()
 
     // Blur active element when blocks are selected (exit text editing mode)
     useEffect(() => {
@@ -423,6 +426,14 @@ export default function PageEditor({
                 handleUndo()
                 return
             }
+
+            if ((e.metaKey || e.ctrlKey) && e.key === 's' && !e.shiftKey) {
+                if (isInNativeInput) return
+                e.preventDefault()
+                syncNow()
+                return
+            }
+
 
             // Ctrl/Cmd + Shift + Z or Ctrl/Cmd + Y: Redo
             if (((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'z') ||

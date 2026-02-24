@@ -8,13 +8,15 @@ import ShareModal from '@/components/ShareModal'
 import ProfileSetupModal from '@/components/ProfileSetupModal'
 import PresenceAvatars from '@/components/PresenceAvatars'
 import { Page } from '@/lib/types'
-import { PanelLeft, LogIn, LogOut, ChevronDown, Share2 } from 'lucide-react'
+import { PanelLeft, LogIn, ChevronDown, Share2 } from 'lucide-react'
 import Link from 'next/link'
 import { useWorkspace } from '@/providers/WorkspaceProvider'
 import PageEditor from '@/components/pages/PageEditor'
 import { useAuth } from '@/providers/AuthProvider'
 import { WorkspaceContextMenu } from '@/components/WorkspaceContextMenu'
 import UserAvatar, { getUserDisplayName } from '@/components/UserAvatar'
+import { UserModal } from '@/components/UserModal'
+import { SyncModal } from '@/components/SyncModal'
 
 export default function Home() {
     const [currentPageId, setCurrentPageId] = useState<string | null>(null)
@@ -24,12 +26,13 @@ export default function Home() {
     const [showShortcuts, setShowShortcuts] = useState(false)
     const [showShare, setShowShare] = useState(false)
     const [wsContextMenu, setWsContextMenu] = useState<boolean>(false)
+    const [syncModalOpen, setSyncModalOpen] = useState(false)
 
     const [sidebarOpen, setSidebarOpen] = useState(true)
     const { user, isGuest, profile, needsProfileSetup, completeProfileSetup, signOut } = useAuth()
     const {
         workspace, workspaces, pages, onlineUsers, userRole, conflictPageId,
-        loading: workspaceLoading,
+        loading: workspaceLoading, syncing, syncNow, hasUnsavedChanges,
         setPage, createPage: providerCreatePage, deletePage: providerDeletePage,
         setWorkspaceSettings, switchWorkspace, createWorkspace,
         deleteWorkspace, renameWorkspace,
@@ -82,6 +85,7 @@ export default function Home() {
                 e.preventDefault()
                 setShowSearch(true)
             }
+
         }
 
         window.addEventListener('keydown', handleKeyDown)
@@ -225,33 +229,50 @@ export default function Home() {
 
 
                     {user && !isGuest && (
-                        <div
-                            onClick={(e) => {
-                                e.preventDefault()
-                                setWsContextMenu(true)
-                            }}
-                            className="flex text-sm text-blue-600 bg-blue-500/10 dark:bg-zinc-700/30 cursor-pointer dark:text-gray-400 rounded-lg px-2 py-0.5">
-                            {workspace.name}
-                            {wsContextMenu &&
-                                <WorkspaceContextMenu
-                                    workspaceName={workspace.name}
-                                    isOwner={workspace.role == "owner"}
-                                    canDelete={workspaces.length > 1}
-                                    onClose={() => setWsContextMenu(false)}
-                                    onRename={(newName) => {
-                                        renameWorkspace(workspace.id, newName)
-                                    }}
-                                    onManageMembers={() => {
-                                        setShowShare(true)
-                                    }}
-                                    onDelete={() => {
-                                        deleteWorkspace(workspace.id)
-                                    }}
-                                />
-                            }
-                        </div>
+                        <>
+                            <div
+                                onClick={(e) => {
+                                    e.preventDefault()
+                                    setWsContextMenu(true)
+                                }}
+                                className="flex text-sm text-blue-600 bg-blue-500/10 dark:bg-zinc-700/30 cursor-pointer dark:text-gray-400 rounded-lg px-2 py-0.5">
+                                {workspace.name}
+                                {wsContextMenu &&
+                                    <WorkspaceContextMenu
+                                        workspaceName={workspace.name}
+                                        isOwner={workspace.role == "owner"}
+                                        canDelete={workspaces.length > 1}
+                                        onClose={() => setWsContextMenu(false)}
+                                        onRename={(newName) => {
+                                            renameWorkspace(workspace.id, newName)
+                                        }}
+                                        onManageMembers={() => {
+                                            setShowShare(true)
+                                        }}
+                                        onDelete={() => {
+                                            deleteWorkspace(workspace.id)
+                                        }}
+                                    />
+                                }
+                            </div>
+
+
+                            <div className='relative'>
+                                <div onClick={() => setSyncModalOpen(true)} className={`${hasUnsavedChanges ? "bg-red-500" : 'bg-green-500'} h-3 w-3 rounded-xl`} />
+
+                                {syncModalOpen && (
+                                    <SyncModal
+                                        onClose={() => setSyncModalOpen(false)}
+                                        onSyncNow={syncNow}
+                                    />
+                                )}
+                            </div>
+
+                        </>
+
 
                     )}
+
 
                     {user ? (
                         <div className="relative">
@@ -269,57 +290,20 @@ export default function Home() {
                                     size="sm"
                                 />
                                 <span className="text-sm text-gray-700 dark:text-gray-300 max-w-[120px] truncate hidden sm:block">
-                                    {getUserDisplayName(profile?.first_name, profile?.last_name, user.email)}
+                                    {getUserDisplayName(profile?.first_name, profile?.last_name, profile?.email)}
                                 </span>
                                 <ChevronDown size={12} className={`text-gray-400 transition-transform duration-200 ${emailClicked ? 'rotate-180' : ''}`} />
                             </button>
 
-                            {emailClicked && (
-                                <>
-                                    <div className="fixed inset-0 z-40" onClick={() => setEmailClicked(false)} />
-                                    <div className="absolute right-0 top-full mt-1.5 w-64 bg-white dark:bg-[#252525]
-                                                    border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-50
-                                                    py-2 animate-in fade-in zoom-in-95 duration-100">
-                                        <div className="px-3 pb-2 mb-1 border-b border-gray-100 dark:border-gray-700/60">
-                                            <div className="flex items-center gap-2.5">
-                                                <UserAvatar
-                                                    avatarUrl={profile?.avatar_url}
-                                                    firstName={profile?.first_name}
-                                                    lastName={profile?.last_name}
-                                                    email={user.email}
-                                                    userId={user.id}
-                                                    size="lg"
-                                                />
-                                                <div className="min-w-0">
-                                                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                                                        {getUserDisplayName(profile?.first_name, profile?.last_name, user.email)}
-                                                    </div>
-                                                    {profile?.first_name && (
-                                                        <div className="text-xs text-gray-400 dark:text-gray-500 truncate">
-                                                            {user.email}
-                                                        </div>
-                                                    )}
-                                                    <div className="flex items-center gap-1 mt-0.5">
-                                                        <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
-                                                        <span className="text-[10px] text-gray-400">Synced</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <button
-                                            onClick={() => {
-                                                setEmailClicked(false)
-                                                signOut()
-                                            }}
-                                            className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 dark:text-red-400
-                                                       hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-left"
-                                        >
-                                            <LogOut size={15} />
-                                            Sign out
-                                        </button>
-                                    </div>
-                                </>
+                            {emailClicked && profile && (
+                                <UserModal
+                                    profile={profile}
+                                    onClose={() => setEmailClicked(false)}
+                                    onSignOut={() => {
+                                        setEmailClicked(false);   // on ferme quand même
+                                        signOut();
+                                    }}
+                                />
                             )}
                         </div>
                     ) : (

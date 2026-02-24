@@ -39,6 +39,7 @@ type WorkspaceContextValue = {
     syncing: boolean
     userRole: MemberRole | null
     conflictPageId: string | null
+    hasUnsavedChanges: boolean
 
     // Page mutations
     setPage: (page: Page) => void
@@ -78,6 +79,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     const [onlineUsers, setOnlineUsers] = useState<PresenceUser[]>([])
     const [loading, setLoading] = useState(true)
     const [syncing, setSyncing] = useState(false)
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+
 
     const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     const pagesChannelRef = useRef<RealtimeChannel | null>(null)
@@ -87,6 +90,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     const hasLoadedOnceRef = useRef(false)
 
     currentUserIdRef.current = user?.id ?? null
+
 
     // ─── Derived state ───────────────────────────────────────
 
@@ -152,10 +156,14 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         )
     }, [user, isGuest, profile, cleanupRealtimeChannels])
 
+
+
+    //----- update unsavedChanges state
+    useEffect(() => {
+        setHasUnsavedChanges(true)
+    }, [pages])
+
     // ─── Initial load ────────────────────────────────────────
-
-
-
     useEffect(() => {
         if (authLoading) return
         let cancelled = false
@@ -312,6 +320,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
                     darkMode: workspace.darkMode,
                     pageOrder: workspace.pageOrder,
                 })
+                setHasUnsavedChanges(false)
+
             }
         } finally {
             setSyncing(false)
@@ -566,6 +576,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
             syncing,
             userRole,
             conflictPageId,
+            hasUnsavedChanges,
             setPage,
             createPage,
             deletePage,
