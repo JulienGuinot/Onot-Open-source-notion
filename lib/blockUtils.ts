@@ -130,6 +130,7 @@ export const getBlockTypeName = (type: BlockType): string => {
         'table': 'Table',
         'youtube': 'YouTube',
         'file': 'File',
+        'map': "Map"
     }
     return typeNames[type] || type
 }
@@ -155,6 +156,7 @@ export const getBlockPlaceholder = (type: BlockType): string => {
         'table': '',
         'youtube': 'Paste a YouTube URL...',
         'file': '',
+        'map': "Paste an address or place"
     }
     return placeholders[type] || ''
 }
@@ -195,6 +197,7 @@ export const getRecommendedNextType = (currentType: BlockType): BlockType => {
         'table': 'text',
         'youtube': 'text',
         'file': 'text',
+        'map': "text"
     }
     return recommendations[currentType] || 'text'
 }
