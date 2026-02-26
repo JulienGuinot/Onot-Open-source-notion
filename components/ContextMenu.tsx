@@ -258,13 +258,26 @@ export default function ContextMenu({
             let adjustedX = x
             let adjustedY = y
 
-            if (rect.right > viewportWidth) {
-                adjustedX = viewportWidth - rect.width - 10
+            // Ajustement horizontal - si déborde à droite
+            if (x + rect.width > viewportWidth) {
+                adjustedX = Math.max(10, viewportWidth - rect.width - 10)
             }
 
-            if (rect.bottom > viewportHeight) {
-                adjustedY = viewportHeight - rect.height - 10
+            // Ajustement vertical intelligent
+            const spaceBelow = viewportHeight - y
+            const spaceAbove = y
+
+            if (spaceBelow < rect.height) {
+                // Pas assez d'espace en dessous
+                if (spaceAbove >= rect.height) {
+                    // Assez d'espace au-dessus : ancrer en bas-gauche (menu au-dessus du clic)
+                    adjustedY = y - rect.height
+                } else {
+                    // Pas assez d'espace nulle part : coller en bas de viewport
+                    adjustedY = Math.max(10, viewportHeight - rect.height - 10)
+                }
             }
+            // Sinon, garder adjustedY = y (ancrage normal en haut-gauche)
 
             menuRef.current.style.left = `${adjustedX}px`
             menuRef.current.style.top = `${adjustedY}px`

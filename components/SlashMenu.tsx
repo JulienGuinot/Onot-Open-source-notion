@@ -245,6 +245,41 @@ export function SlashMenu({ onClose, onSelect, position, searchQuery = '' }: Sla
         }
     }, [onClose, onSelect, filteredItems, selectedIndex])
 
+    // Ajoute ce useEffect après les autres useEffect existants
+    useEffect(() => {
+        if (menuRef.current && position) {
+            const rect = menuRef.current.getBoundingClientRect()
+            const viewportWidth = window.innerWidth
+            const viewportHeight = window.innerHeight
+
+            let adjustedX = position.left
+            let adjustedY = position.top
+
+            // Ajustement horizontal - si déborde à droite
+            if (position.left + rect.width > viewportWidth) {
+                adjustedX = Math.max(10, viewportWidth - rect.width - 10)
+            }
+
+            // Ajustement vertical intelligent
+            const spaceBelow = viewportHeight - position.top
+            const spaceAbove = position.top
+
+            if (spaceBelow < rect.height) {
+                // Pas assez d'espace en dessous
+                if (spaceAbove >= rect.height) {
+                    // Assez d'espace au-dessus : ancrer en bas-gauche (menu au-dessus du clic)
+                    adjustedY = position.top - rect.height
+                } else {
+                    // Pas assez d'espace nulle part : coller en bas de viewport
+                    adjustedY = Math.max(10, viewportHeight - rect.height - 10)
+                }
+            }
+
+            // Appliquer les ajustements
+            menuRef.current.style.left = `${adjustedX}px`
+            menuRef.current.style.top = `${adjustedY}px`
+        }
+    }, [position])
     if (!position) return null
 
     return (
