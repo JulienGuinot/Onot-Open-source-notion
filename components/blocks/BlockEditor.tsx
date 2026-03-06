@@ -506,7 +506,13 @@ export default function BlockEditor({
                         depth={depth + 1}
                         autoFocus={child.autoFocus || focusChildId === child.id}
                         isSelected={false}
-                        onUpdate={(updated) => updateChildBlock(child.id, updated)}
+                        onUpdate={(updated) => {
+                            // Si autoFocus est true, appliquer le focus au bloc enfant
+                            if (updated.autoFocus) {
+                                setFocusChildId(child.id)
+                            }
+                            updateChildBlock(child.id, updated)
+                        }}
                         onDelete={() => deleteChildBlock(child.id, childIndex)}
                         onEnter={(splitContent, blockType) => {
                             const currentChildren = block.children || []
