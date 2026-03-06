@@ -158,8 +158,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
 
 
 
-    //----- update unsavedChanges state
     useEffect(() => {
+        if (!hasLoadedOnceRef.current) return
         setHasUnsavedChanges(true)
     }, [pages])
 
@@ -168,6 +168,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         if (authLoading) return
         let cancelled = false
         const loadData = async () => {
+            console.log("First load")
             if (!hasLoadedOnceRef.current) {
                 setLoading(true)
             }
@@ -307,58 +308,56 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     }, [user, isGuest, currentWsId])
 
     const syncNow = useCallback(async () => {
-        console.log('Trying to sync now')
         if (!user || isGuest || !currentWsId) return
         if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current)
         setSyncing(true)
-        console.log("Syncing...")
         try {
-            for (const page of Object.values(pages)) {
-                await savePageToCloud(currentWsId, page, user.id)
-                console.log("page saved to cloud", page.title)
-            }
+            await Promise.all(
+                Object.values(pages).map((page) =>
+                    savePageToCloud(currentWsId, page, user.id)
+                )
+            )
             if (workspace) {
                 await updateWorkspaceInCloud(currentWsId, {
                     name: workspace.name,
                     darkMode: workspace.darkMode,
                     pageOrder: workspace.pageOrder,
                 })
-                console.log("workspace saved to cloud", workspace.name)
-
-                setHasUnsavedChanges(false)
-
             }
-        } catch (err: any) {
-            console.error("An error occured", err)
+            setHasUnsavedChanges(false)
+        } catch (err) {
+            console.error("Sync failed:", err)
         } finally {
             setSyncing(false)
         }
     }, [user, isGuest, currentWsId, pages, workspace])
-
     // Save to local storage for guest mode
-    const saveLocalState = useCallback(() => {
+    const saveLocalState = useCallback((
+        currentPages: Record<string, Page> = pages,
+        currentWorkspaces: WorkspaceData[] = workspaces
+    ) => {
         if (user && !isGuest) return
         if (!currentWsId) return
 
         const appData = loadAppData()
-        const ws = workspaces.find((w) => w.id === currentWsId)
+        const ws = currentWorkspaces.find((w) => w.id === currentWsId)
         if (ws) {
-            appData.workspaces[currentWsId] = {
-                ...ws,
-                pages,
-            }
+            appData.workspaces[currentWsId] = { ...ws, pages: currentPages }
             appData.currentWorkspaceId = currentWsId
             saveAppData(appData)
         }
-    }, [user, isGuest, currentWsId, workspaces, pages])
+    }, [user, isGuest, currentWsId, pages, workspaces])
 
     // ─── Page mutations ──────────────────────────────────────
 
     const setPage = useCallback((page: Page) => {
-        setPages((prev) => ({ ...prev, [page.id]: page }))
+        setPages((prev) => {
+            const next = { ...prev, [page.id]: page }
+            saveLocalState(next, workspaces)
+            return next
+        })
         syncPageToCloud(page)
-        saveLocalState()
-    }, [syncPageToCloud, saveLocalState])
+    }, [syncPageToCloud, saveLocalState, workspaces])
 
     const createPage = useCallback((parentId: string | null = null): string => {
         const newPage: Page = {
@@ -373,27 +372,23 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         setPages((prev) => ({ ...prev, [newPage.id]: newPage }))
 
         setWorkspaces((prev) =>
-            prev.map((w) =>
-                w.id === currentWsId
-                    ? { ...w, pageOrder: [...w.pageOrder, newPage.id] }
-                    : w
-            )
+            prev.map((w) => {
+                if (w.id !== currentWsId) return w
+                const newOrder = [...w.pageOrder, newPage.id]
+
+                if (user && !isGuest && currentWsId) {
+                    savePageToCloud(currentWsId, newPage, user.id)
+                    updateWorkspaceInCloud(currentWsId, { pageOrder: newOrder })
+                }
+
+                return { ...w, pageOrder: newOrder }
+            })
         )
 
-        if (user && !isGuest && currentWsId) {
-            savePageToCloud(currentWsId, newPage, user.id)
-            const ws = workspaces.find((w) => w.id === currentWsId)
-            if (ws) {
-                updateWorkspaceInCloud(currentWsId, {
-                    pageOrder: [...ws.pageOrder, newPage.id],
-                })
-            }
-        } else {
-            saveLocalState()
-        }
+        if (!user || isGuest) saveLocalState()
 
         return newPage.id
-    }, [currentWsId, user, isGuest, workspaces, saveLocalState])
+    }, [currentWsId, user, isGuest, saveLocalState])
 
     const deletePage = useCallback((pageId: string) => {
         const collectIds = (id: string, all: Record<string, Page>): string[] => {
@@ -441,6 +436,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     )
 
     const switchWorkspace = useCallback(async (id: string) => {
+        cleanupRealtimeChannels() // ← flush immédiat avant tout
         setCurrentWsId(id)
         setPages({})
         setMembers([])
@@ -465,7 +461,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
             const appData = loadAppData()
             setPages(appData.workspaces[id]?.pages ?? {})
         }
-    }, [user, isGuest])
+    }, [user, isGuest, cleanupRealtimeChannels])
 
     const createWorkspaceAction = useCallback((name: string): string => {
         if (user && !isGuest) {
