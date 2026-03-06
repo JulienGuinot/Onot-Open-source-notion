@@ -671,7 +671,9 @@ export default function PageEditor({
                                 isSelected={selectedBlockIds.has(block.id)}
                                 onBlockClick={(e) => handleBlockClick(block.id, e)}
                                 onUpdate={(updated) => {
+                                    // Si autoFocus est true, appliquer le focus au bloc
                                     if (updated.autoFocus) {
+                                        setFocusBlockId(block.id)
                                         updated = { ...updated, autoFocus: false }
                                     }
                                     handleBlockUpdate(block.id, updated)
