@@ -10,10 +10,10 @@ interface UseContainerChildrenProps {
 export function useContainerChildren({ block, onUpdate }: UseContainerChildrenProps) {
     const [focusChildId, setFocusChildId] = useState<string | null>(null)
 
-    // Clear focusChildId after it's applied
+    // Clear focusChildId after it's applied - délai un peu plus long pour s'assurer que le focus est bien appliqué
     useEffect(() => {
         if (!focusChildId) return
-        const timer = setTimeout(() => setFocusChildId(null), 100)
+        const timer = setTimeout(() => setFocusChildId(null), 150)
         return () => clearTimeout(timer)
     }, [focusChildId])
 

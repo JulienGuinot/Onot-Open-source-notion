@@ -102,7 +102,8 @@ export default function PageEditor({
         newBlocks.splice(index + 1, 0, newBlock)
 
         updateBlocks(newBlocks, true)
-        setFocusBlockId(newBlock.id)
+        // Mettre le focus sur le nouveau bloc avec un léger délai pour s'assurer que le DOM est prêt
+        setTimeout(() => setFocusBlockId(newBlock.id), 10)
     }, [page, updateBlocks])
 
     const handleConvertToText = useCallback((blockId: string) => {
@@ -168,6 +169,7 @@ export default function PageEditor({
         }
 
         updateBlocks(newBlocks, true)
+        // Focus le bloc précédent avec le curseur à la fin du contenu mergé
         setFocusBlockId(previousBlock.id)
     }, [page, updateBlocks])
 

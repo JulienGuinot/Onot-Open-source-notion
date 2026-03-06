@@ -148,15 +148,16 @@ export default function BlockEditor({
     useEffect(() => {
         if (autoFocus) {
             if (inputRef.current) {
+                // Délai court pour assurer que le DOM est prêt
                 setTimeout(() => {
                     if (inputRef.current) {
                         inputRef.current.focus()
                         const len = inputRef.current.value.length
                         inputRef.current.setSelectionRange(len, len)
                     }
-                }, 0)
-            } else if (blockRef.current) {
-                setTimeout(() => blockRef.current?.focus(), 0)
+                }, 10)
+            } else if (blockRef.current && ['divider', 'image', 'youtube', 'map', 'table', 'file'].includes(block.type)) {
+                setTimeout(() => blockRef.current?.focus(), 10)
             }
         }
     }, [autoFocus, block.id])
@@ -288,29 +289,35 @@ export default function BlockEditor({
                 e.preventDefault()
                 const newChild: Block = { ...createBlock('text', ''), autoFocus: true }
                 const children = [...(block.children || []), newChild]
+                // Assurer que le toggle s'ouvre et que le focus est appliqué au nouvel enfant
                 onUpdate({ ...block, children, toggleOpen: true })
+                // Attendre un peu avant de définir le focus pour que le DOM soit prêt
+                setTimeout(() => setFocusChildId(newChild.id), 10)
                 return
             }
 
             // Callout: Enter creates child inside
             if (block.type === 'callout') {
                 e.preventDefault()
+                let newChild: Block
                 if (cursorPos < content.length && cursorPos > 0) {
                     const contentBefore = content.substring(0, cursorPos)
                     const contentAfter = content.substring(cursorPos)
-                    const newChild: Block = { ...createBlock('text', contentAfter), autoFocus: true }
+                    newChild = { ...createBlock('text', contentAfter), autoFocus: true }
                     onUpdate({
                         ...block,
                         content: contentBefore,
                         children: [newChild, ...(block.children || [])],
                     })
                 } else {
-                    const newChild: Block = { ...createBlock('text', ''), autoFocus: true }
+                    newChild = { ...createBlock('text', ''), autoFocus: true }
                     onUpdate({
                         ...block,
                         children: [...(block.children || []), newChild],
                     })
                 }
+                // Attendre un peu avant de définir le focus pour que le DOM soit prêt
+                setTimeout(() => setFocusChildId(newChild.id), 10)
                 return
             }
 
@@ -355,6 +362,7 @@ export default function BlockEditor({
             const textarea = e.currentTarget
             const cursorPos = textarea.selectionStart
             const selectionEnd = textarea.selectionEnd
+            const content = textarea.value
 
             if (cursorPos !== selectionEnd) return
 
@@ -371,6 +379,16 @@ export default function BlockEditor({
                     onMergeUp?.(block.content)
                 }
                 return
+            }
+
+            // Si tout le contenu est sélectionné et on fait backspace, supprimer le bloc
+            if (cursorPos > 0 && content.length === cursorPos) {
+                const hasOnlySpace = content.trim() === ''
+                if (hasOnlySpace) {
+                    e.preventDefault()
+                    onBackspace()
+                    return
+                }
             }
         }
     }

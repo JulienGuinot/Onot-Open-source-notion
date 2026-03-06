@@ -41,7 +41,13 @@ export function useSlashMenu({ block, onUpdate, onChangeType }: UseSlashMenuProp
 
         closeSlashMenu()
         onChangeType?.(type)
-        onUpdate({ ...block, content: newContent, type: type as Block['type'] })
+        // Ajouter autoFocus pour assurer que le curseur est dans le nouveau type de bloc
+        onUpdate({
+            ...block,
+            content: newContent,
+            type: type as Block['type'],
+            autoFocus: true
+        })
     }, [slashStartIndex, slashQuery, block, closeSlashMenu, onChangeType, onUpdate])
 
     return {
