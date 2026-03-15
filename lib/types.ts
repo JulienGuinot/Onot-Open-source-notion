@@ -15,9 +15,10 @@ export type BlockType =
     | 'callout'
     | 'image'
     | 'table'
+    | 'drawing'
     | 'youtube'
     | 'file'
-    | 'map'
+    | 'map';
 
 // ─── Table / Database Types ───────────────────────────────────
 
@@ -42,8 +43,8 @@ export interface TableColumn {
     type: ColumnType;
     width: number;
     options?: SelectOption[];
-    hidden?: boolean;
     wrap?: boolean;
+    hidden?: boolean;
 }
 
 export interface TableRow {
@@ -128,13 +129,13 @@ export interface Block {
     imageCaption?: string;
     // YouTube specific
     youtubeUrl?: string;
-    //Maps specific
-    mapUrl?: string
     // File specific
     fileUrl?: string;
     fileName?: string;
     fileSize?: number;
     fileMimeType?: string;
+    // Map specific
+    mapUrl?: string;
     // UI state
     autoFocus?: boolean;
 }
@@ -154,28 +155,18 @@ export interface Page {
     updatedAt: number;
 }
 
-// ─── Profiles ─────────────────────────────────────────────────
+// ─── Workspace ────────────────────────────────────────────────
 
-export interface UserProfile {
-    id: string;
-    email: string;
-    first_name: string;
-    last_name: string;
-    avatar_url: string;
-    created_at: string;
-    updated_at: string;
-}
-
-// ─── Collaboration ────────────────────────────────────────────
-
-export type MemberRole = 'owner' | 'editor' | 'viewer';
+export type MemberRole = 'owner' | 'admin' | 'editor' | 'viewer';
 
 export interface WorkspaceMember {
-    workspace_id: string;
     user_id: string;
+    workspace_id: string;
     role: MemberRole;
-    created_at: string;
     email?: string;
+    first_name?: string;
+    last_name?: string;
+    avatar_url?: string;
     profile?: UserProfile;
 }
 
@@ -183,36 +174,40 @@ export interface WorkspaceInvite {
     id: string;
     workspace_id: string;
     token: string;
-    role: Exclude<MemberRole, 'owner'>;
-    created_by: string;
-    expires_at: string | null;
-    created_at: string;
+    role: MemberRole;
+    expires_at: string;
+    created_by?: string;
 }
 
 export interface PresenceUser {
     user_id: string;
     email: string;
-    online_at: string;
+    first_name?: string;
+    last_name?: string;
+    avatar_url?: string;
+    last_seen?: number;
+}
+
+export interface UserProfile {
+    id: string;
+    email: string;
     first_name?: string;
     last_name?: string;
     avatar_url?: string;
 }
 
-// ─── Workspace ────────────────────────────────────────────────
-
 export interface WorkspaceData {
     id: string;
     name: string;
+    pages?: Record<string, Page>;
     pageOrder: string[];
     darkMode?: boolean;
     role?: MemberRole;
 }
 
-/**
- * Local-storage format embeds pages inside each workspace for offline use.
- * The cloud schema stores pages in a separate `pages` table.
- */
+// ─── App Data ────────────────────────────────────────────────
+
 export interface AppData {
     currentWorkspaceId: string;
-    workspaces: Record<string, WorkspaceData & { pages: Record<string, Page> }>;
+    workspaces: Record<string, WorkspaceData>;
 }

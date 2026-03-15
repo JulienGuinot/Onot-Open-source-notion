@@ -35,12 +35,21 @@ export default function PageEditor({
     const [showUndoToast, setShowUndoToast] = useState<'undo' | 'redo' | null>(null)
     const [showClipboardToast, setShowClipboardToast] = useState<'copy' | 'cut' | 'paste' | null>(null)
     const containerRef = useRef<HTMLDivElement>(null)
+    const { syncNow } = useWorkspace()
+
+
+
+
+
+    // Keep a ref so the keyboard handler always calls the latest syncNow
+    // without needing to re-register the listener on every edit.
+    const syncNowRef = useRef(syncNow)
+    useEffect(() => { syncNowRef.current = syncNow }, [syncNow])
 
     // ─── Multi-block selection ──────────────────────────────────
     const [selectedBlockIds, setSelectedBlockIds] = useState<Set<string>>(new Set())
     const [selectionAnchor, setSelectionAnchor] = useState<string | null>(null)
 
-    const { syncNow } = useWorkspace()
 
     // Blur active element when blocks are selected (exit text editing mode)
     useEffect(() => {
@@ -432,7 +441,7 @@ export default function PageEditor({
             if ((e.metaKey || e.ctrlKey) && e.key === 's' && !e.shiftKey) {
                 if (isInNativeInput) return
                 e.preventDefault()
-                syncNow()
+                syncNowRef.current()
                 return
             }
 

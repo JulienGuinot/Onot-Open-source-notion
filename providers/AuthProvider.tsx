@@ -80,7 +80,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!supabase) return
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            async (_event, session) => {
+            async (event, session) => {
+                // TOKEN_REFRESHED only renews the access token – user identity is unchanged.
+                // Skipping setUser avoids triggering a full workspace reload unnecessarily.
+                if (event === 'TOKEN_REFRESHED') return
+
                 const newUser = session?.user || null
                 setUser(newUser)
                 if (newUser) {
@@ -94,6 +98,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         )
         return () => subscription?.unsubscribe()
     }, [loadProfile])
+
+    // ─── Manage Supabase auto-refresh based on page visibility ───
+    // GoTrueClient uses navigator.locks to coordinate token refreshes.
+    // If the page is frozen (background tab / bfcache) while a refresh is
+    // in progress, the lock is never released → all subsequent getSession()
+    // calls deadlock → REST API requests hang until our timeout fires.
+    // Fix: stop the auto-refresh when the tab is hidden, restart it when visible.
+    useEffect(() => {
+        if (!supabase) return
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                supabase!.auth.startAutoRefresh()
+            } else {
+                supabase!.auth.stopAutoRefresh()
+            }
+        }
+
+        document.addEventListener('visibilitychange', handleVisibilityChange)
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }, [])
 
     const continueAsGuest = useCallback(() => {
         setMode('guest')

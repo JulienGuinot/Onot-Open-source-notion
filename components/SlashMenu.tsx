@@ -20,6 +20,7 @@ import {
     Paperclip,
     LucideIcon,
     Map,
+    Pencil,
 } from 'lucide-react'
 
 export interface SlashMenuProps {
@@ -156,6 +157,13 @@ const menuItems: MenuItem[] = [
         icon: Map,
         keywords: ["map", "lieu", "place"],
         description: "Embed a google maps place"
+    },
+    {
+        label: "Drawing",
+        type: "drawing",
+        icon: Pencil,
+        keywords: ["draw", "sketch", "diagram", "whiteboard", "dessin", "croquis"],
+        description: "Create a drawing with Excalidraw"
     }
 ]
 

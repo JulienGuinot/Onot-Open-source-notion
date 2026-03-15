@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { WorkspaceProvider } from '@/providers/WorkspaceProvider'
 import { AuthProvider } from '@/providers/AuthProvider'
+import "@excalidraw/excalidraw/index.css";
 
 export const metadata: Metadata = {
     title: 'Onot - Note Taking App',

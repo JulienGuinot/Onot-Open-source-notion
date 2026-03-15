@@ -50,6 +50,7 @@ interface SidebarProps {
 
 const ROLE_ICON: Record<MemberRole, React.ReactNode> = {
     owner: <Shield size={10} className="text-amber-500" />,
+    admin: <Shield size={10} className="text-amber-400" />,
     editor: <Edit3 size={10} className="text-blue-500" />,
     viewer: <Eye size={10} className="text-gray-400" />,
 }

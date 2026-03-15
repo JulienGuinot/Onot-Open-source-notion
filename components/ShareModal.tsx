@@ -14,12 +14,14 @@ interface ShareModalProps {
 
 const ROLE_LABELS: Record<MemberRole, string> = {
     owner: 'Owner',
+    admin: 'Admin',
     editor: 'Editor',
     viewer: 'Viewer',
 }
 
 const ROLE_ICONS: Record<MemberRole, React.ReactNode> = {
     owner: <Shield size={14} />,
+    admin: <Shield size={14} />,
     editor: <Edit3 size={14} />,
     viewer: <Eye size={14} />,
 }

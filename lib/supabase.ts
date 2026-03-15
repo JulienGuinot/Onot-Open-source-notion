@@ -114,21 +114,37 @@ export async function updateWorkspaceInCloud(
     if (updates.pageOrder !== undefined) settingsPatch.pageOrder = updates.pageOrder
 
     if (Object.keys(settingsPatch).length) {
-        const { data: current } = await supabase
+        const selectPromise = supabase
             .from('workspaces')
             .select('data')
             .eq('id', workspaceId)
             .single()
+
+        const selectTimeout = new Promise<{ data: null; error: { message: string } }>((resolve) =>
+            setTimeout(() => resolve({ data: null, error: { message: "TIMEOUT" } }), 8000)
+        )
+
+        const { data: current, error: selectErr } = await Promise.race([selectPromise, selectTimeout])
+        if (selectErr) {
+            console.error('Failed to read workspace before update:', formatError(selectErr))
+            return false
+        }
 
         patch.data = { ...(current?.data as object ?? {}), ...settingsPatch }
     }
 
     if (!Object.keys(patch).length) return true
 
-    const { error } = await supabase
+    const updatePromise = supabase
         .from('workspaces')
         .update(patch)
         .eq('id', workspaceId)
+
+    const timeoutPromise = new Promise<{ error: { message: string } }>((resolve) =>
+        setTimeout(() => resolve({ error: { message: "TIMEOUT" } }), 8000)
+    )
+
+    const { error } = await Promise.race([updatePromise, timeoutPromise])
 
     if (error) {
         console.error('Failed to update workspace:', formatError(error))
@@ -188,37 +204,50 @@ export async function savePageToCloud(
     userId: string,
     expectedUpdatedAt?: string
 ): Promise<boolean | 'conflict'> {
+
+    console.log("SavePageToCloud appelée")
+    console.log(supabase ? "Supabase is ok" : "Supabase is not ok")
     if (!supabase) return false
 
     if (expectedUpdatedAt) {
-        const { data: current } = await supabase
+        console.log("fetch supabase - expectedUpdatedAt")
+        const { data: current, error } = await supabase
             .from('pages')
             .select('updated_at')
             .eq('id', page.id)
             .eq('workspace_id', workspaceId)
             .single()
 
+
+
+        console.error("Une erreur est survenue", error, current)
+
         if (current && current.updated_at !== expectedUpdatedAt) {
             return 'conflict'
         }
     }
 
-    const { error } = await supabase
+    console.log("fetch supabase 2")
+    const upsertPromise = supabase
         .from('pages')
         .upsert(
-            {
-                id: page.id,
-                workspace_id: workspaceId,
-                data: page,
-                updated_by: userId,
-            },
+            { id: page.id, workspace_id: workspaceId, data: page, updated_by: userId },
             { onConflict: 'id,workspace_id' }
         )
+
+    const timeoutPromise = new Promise<{ error: { message: string } }>((resolve) =>
+        setTimeout(() => resolve({ error: { message: "TIMEOUT" } }), 8000)
+    )
+
+    const { error } = await Promise.race([upsertPromise, timeoutPromise])
+    console.log("Après race, error:", error)
 
     if (error) {
         console.error('Failed to save page:', formatError(error))
         return false
     }
+
+    console.log("Carré ca a marché")
     return true
 }
 

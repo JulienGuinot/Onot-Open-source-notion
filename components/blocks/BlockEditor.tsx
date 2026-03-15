@@ -18,6 +18,7 @@ import SlashMenu from '@/components/SlashMenu'
 import { useSlashMenu } from '@/hooks/useSlashMenu'
 import { useContainerChildren } from '@/hooks/useContainerChildren'
 import MapBlock from './MapBlock'
+import DrawingBlock from './DrawingBlock'
 
 // ─── Constants ───────────────────────────────────────────────
 
@@ -141,7 +142,7 @@ export default function BlockEditor({
     // ─── Computed ────────────────────────────────────────────
     const blockStyle = BLOCK_STYLES[block.type] || ''
     const placeholder = BLOCK_PLACEHOLDERS[block.type] || ''
-    const isNonTextBlock = ['divider', 'image', 'youtube', 'map', 'table', 'file'].includes(block.type)
+    const isNonTextBlock = ['divider', 'image', 'youtube', 'map', 'table', 'file', 'drawing'].includes(block.type)
 
     // ─── Effects ─────────────────────────────────────────────
 
@@ -755,6 +756,8 @@ export default function BlockEditor({
 
                 ) : block.type === "map" ? (
                     <MapBlock block={block} onUpdate={onUpdate} onKeyDown={handleKeyDown as any} />
+                ) : block.type === "drawing" ? (
+                    <DrawingBlock block={block} onUpdate={onUpdate} onKeyDown={handleKeyDown as any} />
                 ) : (
                     <TextareaBlock
                         ref={inputRef}
