@@ -26,6 +26,7 @@ type WorkspaceContextValue = {
     syncing: boolean
     userRole: MemberRole | null
     conflictPageId: string | null
+    hasUnsavedChanges: boolean
 
     setPage: (page: Page) => void
     createPage: (parentId?: string | null) => string
@@ -60,6 +61,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     const [onlineUsers, setOnlineUsers] = useState<PresenceUser[]>([])
     const [loading, setLoading] = useState(true)
     const [syncing, setSyncing] = useState(false)
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
     const [conflictPageId, setConflictPageId] = useState<string | null>(null)
 
     const syncTimer = useRef<NodeJS.Timeout | null>(null)
@@ -75,17 +77,10 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => { workspacesRef.current = workspaces }, [workspaces])
     useEffect(() => { currentWsIdRef.current = currentWsId }, [currentWsId])
 
-    useEffect(() => {
-        console.log("Pages updated", pages)
-    }, [pages])
 
     useEffect(() => {
-        console.log("Workspace updateds", workspaces)
-    }, [workspaces])
-
-    useEffect(() => {
-        console.log("Current workspace id updated", currentWsId)
-    }, [currentWsId])
+        setHasUnsavedChanges(true)
+    }, [pages, workspaces])
 
 
     const isCloud = Boolean(user && !isGuest)
@@ -471,14 +466,13 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         setMembers(prev => prev.map(m => m.user_id === userId ? { ...m, role } : m))
     }, [currentWsId])
 
-    // ─── Context ──────────────────────────────────────────────
 
     return (
         <WorkspaceContext.Provider value={{
             workspace, workspaces, pages, members, invites, onlineUsers,
             loading, syncing, userRole, conflictPageId,
             setPage, createPage, deletePage,
-            setWorkspaceSettings, switchWorkspace, createWorkspace, deleteWorkspace, renameWorkspace,
+            setWorkspaceSettings, switchWorkspace, hasUnsavedChanges, createWorkspace, deleteWorkspace, renameWorkspace,
             createInviteLink, revokeInviteLink, removeMemberFromWorkspace, updateMemberRoleInWorkspace,
             syncNow,
         }}>

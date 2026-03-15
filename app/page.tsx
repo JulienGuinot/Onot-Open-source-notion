@@ -32,7 +32,7 @@ export default function Home() {
     const { user, isGuest, profile, needsProfileSetup, completeProfileSetup, signOut } = useAuth()
     const {
         workspace, workspaces, pages, onlineUsers, userRole, conflictPageId,
-        loading: workspaceLoading, syncing, syncNow, hasUnsavedChanges,
+        loading: workspaceLoading, syncing, syncNow,
         setPage, createPage: providerCreatePage, deletePage: providerDeletePage,
         setWorkspaceSettings, switchWorkspace, createWorkspace,
         deleteWorkspace, renameWorkspace,
@@ -257,16 +257,7 @@ export default function Home() {
                             </div>
 
 
-                            <div className='relative'>
-                                <div onClick={() => setSyncModalOpen(true)} className={`${hasUnsavedChanges ? "bg-red-500" : 'bg-green-500'} h-3 w-3 rounded-xl`} />
 
-                                {syncModalOpen && (
-                                    <SyncModal
-                                        onClose={() => setSyncModalOpen(false)}
-                                        onSyncNow={syncNow}
-                                    />
-                                )}
-                            </div>
 
                         </>
 
