@@ -147,7 +147,19 @@ export default function Home() {
     if (!workspace) {
         return (
             <div className="flex h-screen items-center justify-center bg-white dark:bg-zinc-900">
-                <div className="text-gray-600 dark:text-gray-400">No workspace found</div>
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center shadow-lg">
+                        <span className="text-3xl">📝</span>
+                    </div>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">No workspace found</p>
+                    <button
+                        onClick={() => createWorkspace("My Workspace")}
+                        className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl
+                                   shadow-lg shadow-blue-500/25 transition-all"
+                    >
+                        Create a workspace
+                    </button>
+                </div>
             </div>
         )
     }

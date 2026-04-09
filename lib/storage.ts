@@ -148,7 +148,7 @@ const getDefaultWorkspace = (): WorkspaceData => ({
     darkMode: false,
 })
 
-const getDefaultPages = (): Record<string, Page> => {
+export const getDefaultPages = (): Record<string, Page> => {
     const welcomePage: Page = {
         id: 'welcome',
         title: 'Welcome to Onot',

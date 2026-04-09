@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react"
 import type { WorkspaceData, Page, WorkspaceMember, WorkspaceInvite, MemberRole, PresenceUser } from "@/lib/types"
 import { useAuth } from "./AuthProvider"
-import { loadAppData, saveAppData, createEmptyWorkspace, loadCurrentWorkspaceId, saveCurrentWorkspaceId } from "@/lib/storage"
+import { loadAppData, saveAppData, createEmptyWorkspace, loadCurrentWorkspaceId, saveCurrentWorkspaceId, getDefaultPages } from "@/lib/storage"
 import {
     fetchUserWorkspaces, fetchWorkspacePages, savePageToCloud, deletePageFromCloud,
     createWorkspaceInCloud, updateWorkspaceInCloud, deleteWorkspaceFromCloud, migrateOldCloudData,
@@ -119,9 +119,30 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
             try {
                 if (isCloud) {
                     const migrated = await migrateOldCloudData(user!.id)
-                    const wsList = migrated ?? await fetchUserWorkspaces(user!.id)
+                    let wsList = migrated ?? await fetchUserWorkspaces(user!.id)
 
                     if (cancelled) return
+
+                    if (wsList.length === 0) {
+                        try {
+                            const created = await createWorkspaceInCloud(user!.id, "My Workspace")
+                            if (created) {
+                                const defaultPages = getDefaultPages()
+                                const pageOrder: string[] = []
+                                for (const page of Object.values(defaultPages)) {
+                                    await savePageToCloud(created.id, page, user!.id)
+                                    pageOrder.push(page.id)
+                                }
+                                await updateWorkspaceInCloud(created.id, { pageOrder })
+                                created.pageOrder = pageOrder
+                                wsList = [created]
+                            }
+                        } catch (e) {
+                            console.error("Failed to auto-create default workspace:", e)
+                        }
+                        if (cancelled) return
+                    }
+
                     setWorkspaces(wsList)
 
                     const savedId = loadCurrentWorkspaceId()

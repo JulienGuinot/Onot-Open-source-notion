@@ -1,21 +1,11 @@
 -- Authenticated users can create workspaces
 (auth.uid() = owner_id)
 
---Editors and owners can update workspace
-  (EXISTS ( SELECT 1
-   FROM workspace_members wm
-  WHERE ((wm.workspace_id = workspaces.id) AND (wm.user_id = auth.uid()) AND (wm.role = ANY (ARRAY['owner'::text, 'editor'::text])))))
+-- Editors and owners can update workspace (uses SECURITY DEFINER function to avoid recursion)
+public.is_workspace_editor_or_owner(id, auth.uid())
 
-
--- Members can read workspace
-  ((auth.uid() = owner_id) OR (EXISTS ( SELECT 1
-   FROM workspace_members wm
-  WHERE ((wm.workspace_id = workspaces.id) AND (wm.user_id = auth.uid())))))
-
---Members or owners can read workspace
-  ((auth.uid() = owner_id) OR (EXISTS ( SELECT 1
-   FROM workspace_members wm
-  WHERE ((wm.workspace_id = workspaces.id) AND (wm.user_id = auth.uid())))))
+-- Members can read workspace (uses SECURITY DEFINER function to avoid recursion)
+((auth.uid() = owner_id) OR public.is_workspace_member(id, auth.uid()))
 
 -- Only owners can delete workspace
-  (auth.uid() = owner_id)
+(auth.uid() = owner_id)
