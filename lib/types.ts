@@ -142,9 +142,12 @@ export interface Block {
 
 // ─── Page ─────────────────────────────────────────────────────
 
+export type PageType = 'page' | 'folder';
+
 export interface Page {
     id: string;
     title: string;
+    type?: PageType;
     icon?: string;
     coverImage?: string;
     coverGradient?: string;

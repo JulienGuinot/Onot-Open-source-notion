@@ -1,6 +1,6 @@
 'use client'
 
-import { FolderPlus, Trash2, Copy, Link, Edit } from 'lucide-react'
+import { FolderPlus, Trash2, Copy, Link, Edit, FilePlus } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 
 export function PageContextMenu({
@@ -8,6 +8,7 @@ export function PageContextMenu({
     y,
     onClose,
     onAddSubPage,
+    onAddSubFolder,
     onDelete,
     onDuplicate,
     onCopyLink,
@@ -17,6 +18,7 @@ export function PageContextMenu({
     y: number
     onClose: () => void
     onAddSubPage: () => void
+    onAddSubFolder?: () => void
     onDelete: () => void
     onDuplicate?: () => void
     onCopyLink?: () => void
@@ -77,9 +79,23 @@ export function PageContextMenu({
                 className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300
                    hover:bg-gray-100 dark:hover:bg-zinc-700 text-left transition-colors"
             >
-                <FolderPlus size={16} />
+                <FilePlus size={16} />
                 <span>Add sub-page</span>
             </button>
+
+            {onAddSubFolder && (
+                <button
+                    onClick={() => {
+                        onAddSubFolder()
+                        onClose()
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300
+                       hover:bg-gray-100 dark:hover:bg-zinc-700 text-left transition-colors"
+                >
+                    <FolderPlus size={16} />
+                    <span>Add sub-folder</span>
+                </button>
+            )}
 
             {onDuplicate && (
                 <button

@@ -33,7 +33,8 @@ export default function Home() {
     const {
         workspace, workspaces, pages, onlineUsers, userRole, conflictPageId,
         loading: workspaceLoading, syncing, syncNow,
-        setPage, createPage: providerCreatePage, deletePage: providerDeletePage,
+        setPage, createPage: providerCreatePage, createFolder: providerCreateFolder,
+        deletePage: providerDeletePage, movePage,
         setWorkspaceSettings, switchWorkspace, createWorkspace,
         deleteWorkspace, renameWorkspace,
     } = useWorkspace()
@@ -107,6 +108,18 @@ export default function Home() {
         setCurrentPageId(id)
         if (parentId) {
             setExpandedPages((prev) => new Set([...prev, parentId]))
+        }
+    }
+
+    const handleCreateFolder = (parentId: string | null = null) => {
+        const id = providerCreateFolder(parentId)
+        setExpandedPages((prev) => new Set([...prev, id, ...(parentId ? [parentId] : [])]))
+    }
+
+    const handleMovePage = (dragId: string, targetId: string, position: 'before' | 'after' | 'inside') => {
+        movePage(dragId, targetId, position)
+        if (position === 'inside') {
+            setExpandedPages((prev) => new Set([...prev, targetId]))
         }
     }
 
@@ -187,6 +200,7 @@ export default function Home() {
                     userId={user?.id}
                     onSelectPage={setCurrentPageId}
                     onCreatePage={(parentId) => handleCreatePage(parentId ?? null)}
+                    onCreateFolder={(parentId) => handleCreateFolder(parentId ?? null)}
                     onDeletePage={handleDeletePage}
                     onToggleSearch={() => setShowSearch(true)}
                     onToggleDarkMode={toggleDarkMode}
@@ -197,6 +211,7 @@ export default function Home() {
                     onDeleteWorkspace={deleteWorkspace}
                     onRenameWorkspace={renameWorkspace}
                     onRenamePage={handleRenamePage}
+                    onMovePage={handleMovePage}
                     expandedPages={expandedPages}
                     onToggleExpand={toggleExpand}
                 />

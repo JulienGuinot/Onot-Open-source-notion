@@ -30,7 +30,9 @@ type WorkspaceContextValue = {
 
     setPage: (page: Page) => void
     createPage: (parentId?: string | null) => string
+    createFolder: (parentId?: string | null) => string
     deletePage: (pageId: string) => void
+    movePage: (dragId: string, targetId: string, position: 'before' | 'after' | 'inside') => void
 
     setWorkspaceSettings: (settings: Partial<Pick<WorkspaceData, "name" | "darkMode" | "pageOrder">>) => void
     switchWorkspace: (id: string) => Promise<void>
@@ -280,6 +282,34 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isCloud, currentWsId])
 
+    const createFolder = useCallback((parentId: string | null = null): string => {
+        const folder: Page = {
+            id: `folder-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+            title: "",
+            type: "folder",
+            blocks: [],
+            parentId,
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+        }
+
+        setPages(prev => ({ ...prev, [folder.id]: folder }))
+
+        setWorkspaces(prev => prev.map(w => {
+            if (w.id !== currentWsId) return w
+            const newOrder = [...w.pageOrder, folder.id]
+            if (isCloud && currentWsId) {
+                savePageToCloud(currentWsId, folder, user!.id)
+                updateWorkspaceInCloud(currentWsId, { pageOrder: newOrder })
+            }
+            return { ...w, pageOrder: newOrder }
+        }))
+
+        if (!isCloud) saveLocal()
+        return folder.id
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isCloud, currentWsId])
+
     const deletePage = useCallback((pageId: string) => {
         function collectIds(id: string, all: Record<string, Page>): string[] {
             return [id, ...Object.values(all).filter(p => p.parentId === id).flatMap(p => collectIds(p.id, all))]
@@ -300,6 +330,49 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
             const newOrder = w.pageOrder.filter(id => id !== pageId)
             if (isCloud && currentWsId) updateWorkspaceInCloud(currentWsId, { pageOrder: newOrder })
             return { ...w, pageOrder: newOrder }
+        }))
+
+        if (!isCloud) saveLocal()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isCloud, currentWsId])
+
+    const movePage = useCallback((dragId: string, targetId: string, position: 'before' | 'after' | 'inside') => {
+        if (dragId === targetId) return
+
+        const allPages = pagesRef.current
+        const dragPage = allPages[dragId]
+        if (!dragPage) return
+
+        // Prevent dropping into own descendants
+        let cursor = allPages[targetId]
+        while (cursor?.parentId) {
+            if (cursor.parentId === dragId) return
+            cursor = allPages[cursor.parentId]
+        }
+
+        const newParentId = position === 'inside' ? targetId : (allPages[targetId]?.parentId ?? null)
+        const updatedDrag = { ...dragPage, parentId: newParentId, updatedAt: Date.now() }
+
+        setPages(prev => ({ ...prev, [dragId]: updatedDrag }))
+
+        setWorkspaces(prev => prev.map(w => {
+            if (w.id !== currentWsId) return w
+            const order = w.pageOrder.filter(id => id !== dragId)
+
+            if (position === 'inside') {
+                const lastChildIdx = order.reduce((acc, id, i) =>
+                    allPages[id]?.parentId === targetId ? i : acc, -1)
+                order.splice(lastChildIdx >= 0 ? lastChildIdx + 1 : order.indexOf(targetId) + 1, 0, dragId)
+            } else {
+                const targetIdx = order.indexOf(targetId)
+                order.splice(position === 'before' ? targetIdx : targetIdx + 1, 0, dragId)
+            }
+
+            if (isCloud && currentWsId) {
+                updateWorkspaceInCloud(currentWsId, { pageOrder: order })
+                savePageToCloud(currentWsId, updatedDrag, user!.id)
+            }
+            return { ...w, pageOrder: order }
         }))
 
         if (!isCloud) saveLocal()
@@ -492,7 +565,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         <WorkspaceContext.Provider value={{
             workspace, workspaces, pages, members, invites, onlineUsers,
             loading, syncing, userRole, conflictPageId,
-            setPage, createPage, deletePage,
+            setPage, createPage, createFolder, deletePage, movePage,
             setWorkspaceSettings, switchWorkspace, hasUnsavedChanges, createWorkspace, deleteWorkspace, renameWorkspace,
             createInviteLink, revokeInviteLink, removeMemberFromWorkspace, updateMemberRoleInWorkspace,
             syncNow,

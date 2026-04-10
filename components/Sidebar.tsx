@@ -14,6 +14,7 @@ import {
     Shield,
     Edit3,
     Eye,
+    FolderPlus,
 } from 'lucide-react'
 import { Page, WorkspaceData, MemberRole, UserProfile } from '@/lib/types'
 import { PageItem } from './pages/PageItem'
@@ -34,6 +35,7 @@ interface SidebarProps {
     userId?: string
     onSelectPage: (pageId: string) => void
     onCreatePage: (parentId?: string | null) => void
+    onCreateFolder: (parentId?: string | null) => void
     onDeletePage: (pageId: string) => void
     onToggleSearch: () => void
     onToggleDarkMode: () => void
@@ -44,6 +46,7 @@ interface SidebarProps {
     onDeleteWorkspace: (id: string) => void
     onRenameWorkspace: (id: string, name: string) => void
     onRenamePage: (pageId: string, newTitle: string) => void
+    onMovePage?: (dragId: string, targetId: string, position: 'before' | 'after' | 'inside') => void
     expandedPages: Set<string>
     onToggleExpand: (pageId: string) => void
 }
@@ -69,6 +72,7 @@ export default function Sidebar({
     userId,
     onSelectPage,
     onCreatePage,
+    onCreateFolder,
     onDeletePage,
     onToggleSearch,
     onToggleDarkMode,
@@ -79,6 +83,7 @@ export default function Sidebar({
     onDeleteWorkspace,
     onRenameWorkspace,
     onRenamePage,
+    onMovePage,
     expandedPages,
     onToggleExpand,
 }: SidebarProps) {
@@ -374,17 +379,28 @@ export default function Sidebar({
                         Pages
                     </span>
                     {canEdit && (
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation()
-                                onCreatePage(null)
-                            }}
-                            className="p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700 
-                                       opacity-0 group-hover:opacity-100 transition-all"
-                            title="New page"
-                        >
-                            <Plus size={12} className="text-gray-400" />
-                        </button>
+                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all">
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    onCreateFolder(null)
+                                }}
+                                className="p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
+                                title="New folder"
+                            >
+                                <FolderPlus size={12} className="text-gray-400" />
+                            </button>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    onCreatePage(null)
+                                }}
+                                className="p-0.5 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
+                                title="New page"
+                            >
+                                <Plus size={12} className="text-gray-400" />
+                            </button>
+                        </div>
                     )}
                 </button>
 
@@ -405,9 +421,11 @@ export default function Sidebar({
                                 canEdit={canEdit}
                                 onSelectPage={onSelectPage}
                                 onCreatePage={(parentId) => onCreatePage(parentId)}
+                                onCreateFolder={(parentId) => onCreateFolder(parentId)}
                                 onDeletePage={onDeletePage}
                                 onRenamePage={onRenamePage}
                                 onToggleExpand={onToggleExpand}
+                                onMovePage={onMovePage}
                                 currentPageId={currentPageId || undefined}
                             />
                         )
