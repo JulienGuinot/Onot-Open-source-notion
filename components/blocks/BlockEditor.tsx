@@ -769,6 +769,7 @@ export default function BlockEditor({
                         onFocus={() => setIsFocused(true)}
                         onBlur={() => setIsFocused(false)}
                         placeholder={placeholder}
+                        autoFocus={autoFocus}
                     />
                 ) : (
                     <TextareaBlock

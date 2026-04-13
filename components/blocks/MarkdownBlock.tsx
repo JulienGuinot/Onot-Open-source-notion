@@ -1,6 +1,6 @@
 'use client'
 
-import { ChangeEvent, forwardRef, KeyboardEvent, ReactNode, useState } from 'react'
+import { ChangeEvent, forwardRef, KeyboardEvent, MutableRefObject, ReactNode, useEffect, useRef, useState } from 'react'
 
 interface MarkdownBlockProps {
     value: string
@@ -9,6 +9,7 @@ interface MarkdownBlockProps {
     onFocus: () => void
     onBlur: () => void
     placeholder?: string
+    autoFocus?: boolean
 }
 
 type ListKind = 'ul' | 'ol'
@@ -145,8 +146,42 @@ function renderMarkdown(markdown: string) {
 }
 
 const MarkdownBlock = forwardRef<HTMLTextAreaElement, MarkdownBlockProps>(
-    ({ value, onChange, onKeyDown, onFocus, onBlur, placeholder }, ref) => {
-        const [isEditing, setIsEditing] = useState(!value)
+    ({ value, onChange, onKeyDown, onFocus, onBlur, placeholder, autoFocus }, ref) => {
+        const textareaRef = useRef<HTMLTextAreaElement | null>(null)
+        const [isEditing, setIsEditing] = useState(!value || !!autoFocus)
+
+        const setRefs = (node: HTMLTextAreaElement | null) => {
+            textareaRef.current = node
+            if (typeof ref === 'function') {
+                ref(node)
+            } else if (ref) {
+                ;(ref as MutableRefObject<HTMLTextAreaElement | null>).current = node
+            }
+        }
+
+        useEffect(() => {
+            if (!autoFocus) return
+            setIsEditing(true)
+        }, [autoFocus])
+
+        useEffect(() => {
+            if (!isEditing || !textareaRef.current) return
+            textareaRef.current.focus()
+            const length = textareaRef.current.value.length
+            textareaRef.current.setSelectionRange(length, length)
+        }, [isEditing])
+
+        const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+            if (e.key === 'Escape') {
+                e.preventDefault()
+                e.stopPropagation()
+                setIsEditing(false)
+                e.currentTarget.blur()
+                return
+            }
+
+            onKeyDown(e)
+        }
 
         if (!isEditing && value.trim()) {
             return (
@@ -166,10 +201,10 @@ const MarkdownBlock = forwardRef<HTMLTextAreaElement, MarkdownBlockProps>(
 
         return (
             <textarea
-                ref={ref}
+                ref={setRefs}
                 value={value}
                 onChange={onChange}
-                onKeyDown={onKeyDown}
+                onKeyDown={handleKeyDown}
                 onFocus={() => {
                     setIsEditing(true)
                     onFocus()
@@ -182,8 +217,8 @@ const MarkdownBlock = forwardRef<HTMLTextAreaElement, MarkdownBlockProps>(
                 className="outline-none w-full bg-transparent resize-none leading-relaxed font-mono text-sm
                     dark:text-gray-100 text-gray-900 placeholder:text-gray-400 dark:placeholder:text-gray-500
                     transition-colors"
-                rows={1}
-                style={{ minHeight: '1.5rem' }}
+                rows={6}
+                style={{ minHeight: '10rem' }}
             />
         )
     }
