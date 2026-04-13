@@ -13,6 +13,7 @@ import YoutubeBlock from '@/components/blocks/YoutubeBlock'
 import TodoBlock from '@/components/blocks/TodoBlock'
 import DividerBlock from '@/components/blocks/DividerBlock'
 import TextareaBlock from '@/components/blocks/TextareaBlock'
+import MarkdownBlock from '@/components/blocks/MarkdownBlock'
 import TableBlock from '@/components/table/TableBlock'
 import SlashMenu from '@/components/SlashMenu'
 import { useSlashMenu } from '@/hooks/useSlashMenu'
@@ -40,7 +41,7 @@ const MARKDOWN_SHORTCUTS: Record<string, BlockType> = {
     '!': 'callout',
 }
 
-const MULTI_LINE_BLOCK_TYPES: BlockType[] = ['code', 'quote']
+const MULTI_LINE_BLOCK_TYPES: BlockType[] = ['code', 'quote', 'markdown']
 const LIST_BLOCK_TYPES: BlockType[] = ['bullet-list', 'numbered-list', 'todo']
 const CONTAINER_BLOCK_TYPES: BlockType[] = ['toggle', 'callout']
 
@@ -62,6 +63,7 @@ const BLOCK_PLACEHOLDERS: Partial<Record<BlockType, string>> = {
     'numbered-list': 'List item',
     todo: 'To-do',
     code: 'Write some code...',
+    markdown: 'Write markdown...',
     quote: 'Quote...',
 }
 
@@ -758,6 +760,16 @@ export default function BlockEditor({
                     <MapBlock block={block} onUpdate={onUpdate} onKeyDown={handleKeyDown as any} />
                 ) : block.type === "drawing" ? (
                     <DrawingBlock block={block} onUpdate={onUpdate} onKeyDown={handleKeyDown as any} />
+                ) : block.type === 'markdown' ? (
+                    <MarkdownBlock
+                        ref={inputRef}
+                        value={block.content}
+                        onChange={handleChange}
+                        onKeyDown={handleKeyDown}
+                        onFocus={() => setIsFocused(true)}
+                        onBlur={() => setIsFocused(false)}
+                        placeholder={placeholder}
+                    />
                 ) : (
                     <TextareaBlock
                         ref={inputRef}

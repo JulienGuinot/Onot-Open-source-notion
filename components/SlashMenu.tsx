@@ -10,6 +10,7 @@ import {
     CheckSquare,
     Quote,
     Code,
+    FileText,
     Minus,
     Image as ImageIcon,
     ChevronRight,
@@ -115,6 +116,13 @@ const menuItems: MenuItem[] = [
         icon: Code,
         keywords: ['snippet', 'programming', 'script', 'code block'],
         description: 'Code snippet'
+    },
+    {
+        label: 'Markdown',
+        type: 'markdown',
+        icon: FileText,
+        keywords: ['md', 'format', 'preview', 'render', 'markdown'],
+        description: 'Rendered markdown'
     },
     {
         label: 'Table',

@@ -4,14 +4,12 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import type { WorkspaceData, Page, WorkspaceMember, WorkspaceInvite, MemberRole, PresenceUser } from "@/lib/types"
 import { useAuth } from "./AuthProvider"
 import { loadAppData, saveAppData, createEmptyWorkspace, loadCurrentWorkspaceId, saveCurrentWorkspaceId, getDefaultPages } from "@/lib/storage"
-import {
-    fetchUserWorkspaces, fetchWorkspacePages, savePageToCloud, deletePageFromCloud,
-    createWorkspaceInCloud, updateWorkspaceInCloud, deleteWorkspaceFromCloud, migrateOldCloudData,
-    fetchWorkspaceMembers, fetchWorkspaceInvites,
-    createInvite, revokeInvite, removeMember, updateMemberRole,
-    subscribeToPagesChanges, subscribeToWorkspaceChanges, subscribeToPresence, unsubscribeChannel,
-} from "@/lib/supabase"
 import type { RealtimeChannel } from "@supabase/supabase-js"
+import { subscribeToPagesChanges, subscribeToPresence, subscribeToWorkspaceChanges, unsubscribeChannel } from "@/lib/operations/realtime"
+import { deletePageFromCloud, fetchWorkspacePages, savePageToCloud } from "@/lib/operations/pages"
+import { createWorkspaceInCloud, deleteWorkspaceFromCloud, fetchUserWorkspaces, updateWorkspaceInCloud } from "@/lib/operations/workspaces"
+import { createInvite, fetchWorkspaceInvites, fetchWorkspaceMembers, removeMember, revokeInvite, updateMemberRole } from "@/lib/operations/collaboration"
+import { migrateOldCloudData } from "@/lib/supabase"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

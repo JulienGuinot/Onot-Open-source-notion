@@ -9,6 +9,7 @@ export type BlockType =
     | 'numbered-list'
     | 'todo'
     | 'code'
+    | 'markdown'
     | 'quote'
     | 'divider'
     | 'toggle'

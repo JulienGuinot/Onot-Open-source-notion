@@ -122,6 +122,7 @@ export const getBlockTypeName = (type: BlockType): string => {
         'numbered-list': 'Numbered List',
         'todo': 'To-do',
         'code': 'Code',
+        'markdown': 'Markdown',
         'quote': 'Quote',
         'divider': 'Divider',
         'toggle': 'Toggle',
@@ -149,6 +150,7 @@ export const getBlockPlaceholder = (type: BlockType): string => {
         'numbered-list': 'List item',
         'todo': 'To-do',
         'code': 'Write some code...',
+        'markdown': 'Write markdown...',
         'quote': 'Enter a quote...',
         'divider': '',
         'toggle': 'Toggle list item...',
@@ -188,6 +190,7 @@ export const getRecommendedNextType = (currentType: BlockType): BlockType => {
         'h3': 'text',
         'quote': 'text',
         'code': 'text',
+        'markdown': 'text',
         'divider': 'text',
         'text': 'text',
         'bullet-list': 'bullet-list',
@@ -370,6 +373,7 @@ export const blocksToPlainText = (blocks: Block[]): string => {
             case 'todo': text = `${block.checked ? '[x]' : '[ ]'} ${block.content}`; break
             case 'quote': text = `> ${block.content}`; break
             case 'code': text = `\`\`\`${block.language || ''}\n${block.content}\n\`\`\``; break
+            case 'markdown': text = block.content; break
             case 'divider': text = '---'; break
             case 'toggle': text = `▸ ${block.content}`; break
             case 'callout': text = `${block.calloutIcon || '💡'} ${block.content}`; break

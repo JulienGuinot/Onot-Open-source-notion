@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/providers/AuthProvider'
-import { acceptInvite, fetchInviteByToken } from '@/lib/supabase'
 import { saveCurrentWorkspaceId } from '@/lib/storage'
 import { Loader2, CheckCircle2, XCircle, LogIn } from 'lucide-react'
 import Link from 'next/link'
+import { acceptInvite, fetchInviteByToken } from '@/lib/operations/collaboration'
 
 type InviteState =
     | { status: 'loading' }

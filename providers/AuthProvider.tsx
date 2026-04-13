@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState, useCall
 import type { User } from "@supabase/supabase-js"
 import type { UserProfile } from "@/lib/types"
 import supabase from "@/lib/supabase"
-import { fetchProfile, upsertProfile } from "@/lib/supabase"
+import { fetchProfile, upsertProfile } from "@/lib/operations/profiles"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
