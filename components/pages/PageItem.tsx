@@ -233,8 +233,8 @@ export function PageItem({
                     <span className="text-sm flex-shrink-0">
                         {page.icon || (isFolder
                             ? (isExpanded
-                                ? <FolderOpen size={14} className="text-blue-500 dark:text-blue-400" />
-                                : <Folder size={14} className="text-blue-500 dark:text-blue-400" />)
+                                ? <FolderOpen size={14} className="text-gray-500 dark:text-gray-400" />
+                                : <Folder size={14} className="text-gray-500 dark:text-gray-400" />)
                             : <FileText size={14} className="text-gray-400 dark:text-gray-500" />
                         )}
                     </span>

@@ -26,7 +26,7 @@ export default function SearchModal({ pages, isOpen, onClose, onSelectPage }: Se
     }, [isOpen])
 
     const searchResults = useMemo(() => {
-        const allPages = Object.values(pages)
+        const allPages = Object.values(pages).filter(page => page.type !== 'folder')
         
         if (!query.trim()) {
             // Show recent pages when no query

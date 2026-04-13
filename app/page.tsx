@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Sidebar from '@/components/Sidebar'
 import SearchModal from '@/components/SearchModal'
 import KeyboardShortcutsModal from '@/components/KeyboardShortcutsModal'
@@ -17,6 +17,45 @@ import { WorkspaceContextMenu } from '@/components/WorkspaceContextMenu'
 import UserAvatar, { getUserDisplayName } from '@/components/UserAvatar'
 import { UserModal } from '@/components/UserModal'
 import { SyncModal } from '@/components/SyncModal'
+
+const LAST_PAGE_STORAGE_KEY = 'onot-last-page-by-workspace'
+
+function isEditablePage(page: Page | null | undefined): page is Page {
+    return Boolean(page && page.type !== 'folder')
+}
+
+function findFirstEditablePageId(pageOrder: string[], pages: Record<string, Page>, parentId: string | null = null): string | null {
+    for (const pageId of pageOrder) {
+        const page = pages[pageId]
+        if (!page || page.parentId !== parentId) continue
+        if (page.type !== 'folder') return pageId
+
+        const childPageId = findFirstEditablePageId(pageOrder, pages, pageId)
+        if (childPageId) return childPageId
+    }
+
+    return null
+}
+
+function loadLastPageId(workspaceId: string): string | null {
+    try {
+        const raw = localStorage.getItem(LAST_PAGE_STORAGE_KEY)
+        if (!raw) return null
+        const byWorkspace = JSON.parse(raw) as Record<string, string>
+        return byWorkspace[workspaceId] ?? null
+    } catch {
+        return null
+    }
+}
+
+function saveLastPageId(workspaceId: string, pageId: string): void {
+    try {
+        const raw = localStorage.getItem(LAST_PAGE_STORAGE_KEY)
+        const byWorkspace = raw ? JSON.parse(raw) as Record<string, string> : {}
+        byWorkspace[workspaceId] = pageId
+        localStorage.setItem(LAST_PAGE_STORAGE_KEY, JSON.stringify(byWorkspace))
+    } catch { /* noop */ }
+}
 
 export default function Home() {
     const [currentPageId, setCurrentPageId] = useState<string | null>(null)
@@ -41,14 +80,33 @@ export default function Home() {
 
     const pageOrder = workspace?.pageOrder ?? []
 
-    useEffect(() => {
-        if (workspace) {
-            const validPage = currentPageId && pages[currentPageId]
-            if (!validPage) {
-                setCurrentPageId(pageOrder[0] || null)
-            }
+    const selectPage = useCallback((pageId: string | null) => {
+        setCurrentPageId(pageId)
+        if (workspace?.id && pageId && isEditablePage(pages[pageId])) {
+            saveLastPageId(workspace.id, pageId)
         }
-    }, [workspace?.id])
+    }, [pages, workspace?.id])
+
+    useEffect(() => {
+        if (!workspace) return
+
+        const currentPage = currentPageId ? pages[currentPageId] : null
+        if (isEditablePage(currentPage)) return
+
+        const savedPageId = loadLastPageId(workspace.id)
+        if (savedPageId && isEditablePage(pages[savedPageId])) {
+            setCurrentPageId(savedPageId)
+            return
+        }
+
+        setCurrentPageId(findFirstEditablePageId(pageOrder, pages))
+    }, [workspace?.id, currentPageId, pages, pageOrder])
+
+    useEffect(() => {
+        if (workspace?.id && currentPageId && isEditablePage(pages[currentPageId])) {
+            saveLastPageId(workspace.id, currentPageId)
+        }
+    }, [workspace?.id, currentPageId, pages])
 
     const darkMode = workspace?.darkMode ?? false
 
@@ -105,7 +163,7 @@ export default function Home() {
 
     const handleCreatePage = (parentId: string | null = null) => {
         const id = providerCreatePage(parentId)
-        setCurrentPageId(id)
+        selectPage(id)
         if (parentId) {
             setExpandedPages((prev) => new Set([...prev, parentId]))
         }
@@ -127,7 +185,7 @@ export default function Home() {
         providerDeletePage(pageId)
         if (currentPageId === pageId) {
             const remaining = pageOrder.filter((id) => id !== pageId)
-            setCurrentPageId(remaining[0] || null)
+            selectPage(findFirstEditablePageId(remaining, pages))
         }
     }
 
@@ -155,7 +213,7 @@ export default function Home() {
         setWorkspaceSettings({ darkMode: !darkMode })
     }
 
-    const currentPage = currentPageId ? pages[currentPageId] : null
+    const currentPage = currentPageId && isEditablePage(pages[currentPageId]) ? pages[currentPageId] : null
 
     if (!workspace) {
         return (
@@ -198,7 +256,7 @@ export default function Home() {
                     profile={profile}
                     userEmail={user?.email}
                     userId={user?.id}
-                    onSelectPage={setCurrentPageId}
+                    onSelectPage={selectPage}
                     onCreatePage={(parentId) => handleCreatePage(parentId ?? null)}
                     onCreateFolder={(parentId) => handleCreateFolder(parentId ?? null)}
                     onDeletePage={handleDeletePage}
@@ -376,7 +434,7 @@ export default function Home() {
                 isOpen={showSearch}
                 onClose={() => setShowSearch(false)}
                 onSelectPage={(id) => {
-                    setCurrentPageId(id)
+                    selectPage(id)
                     setShowSearch(false)
                 }}
             />
