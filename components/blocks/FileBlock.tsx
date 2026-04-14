@@ -100,7 +100,7 @@ export default function FileBlock({ block, onUpdate, onKeyDown }: FileBlockProps
         const hasPreview = kind !== 'generic'
 
         return (
-            <div className="group/file relative rounded-xl border border-gray-200 dark:border-zinc-700 overflow-hidden bg-white dark:bg-zinc-800/50">
+            <div className="group/file relative rounded-lg border border-gray-200 dark:border-zinc-700 overflow-hidden bg-white dark:bg-zinc-800/50">
                 <FileControls url={block.fileUrl!} name={block.fileName} onRemove={handleRemove} />
 
                 {kind === 'image' && <ImagePreview url={block.fileUrl!} name={block.fileName} />}
@@ -121,7 +121,7 @@ export default function FileBlock({ block, onUpdate, onKeyDown }: FileBlockProps
 
     if (status === 'uploading') {
         return (
-            <div className="flex items-center gap-3 p-4 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/10">
+            <div className="flex items-center gap-3 p-3 sm:p-4 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/10">
                 <Loader2 size={20} className="text-blue-500 animate-spin flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                     <div className="text-sm text-gray-700 dark:text-gray-300">Uploading…</div>
@@ -140,14 +140,14 @@ export default function FileBlock({ block, onUpdate, onKeyDown }: FileBlockProps
 
     return (
         <div
-            className={`relative rounded-xl border-2 border-dashed transition-all duration-200
+            className={`relative rounded-lg border-2 border-dashed transition-all duration-200
                 ${isDragging ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'}
                 ${status === 'error' ? 'border-red-300 dark:border-red-800' : ''}`}
             onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={onDrop}
         >
             <input ref={fileInputRef} type="file" onChange={onFileSelect} className="hidden" />
 
-            <div className="p-6 flex flex-col items-center justify-center gap-3">
+            <div className="p-4 sm:p-6 flex flex-col items-center justify-center gap-3 text-center">
                 {status === 'error' ? (
                     <>
                         <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">

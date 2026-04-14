@@ -653,7 +653,7 @@ export default function BlockEditor({
             onKeyDown={isNonTextBlock ? handleBlockKeyDown : undefined}
             onFocus={isNonTextBlock ? (e) => { if (e.target === blockRef.current) setIsFocused(true) } : undefined}
             onBlur={isNonTextBlock ? (e) => { if (e.target === blockRef.current) setIsFocused(false) } : undefined}
-            className={`group flex items-start gap-1 relative transition-all duration-150 rounded-lg -mx-2 px-2 py-0.5 outline-none
+            className={`group flex items-start gap-1 relative transition-all duration-150 rounded-lg -mx-1 sm:-mx-2 px-1 sm:px-2 py-0.5 outline-none
                 ${isDragging ? 'opacity-50 bg-blue-50 dark:bg-zinc-900/30' : ''}
                 ${isSelected ? 'bg-blue-100/60 dark:bg-zinc-900/30 ring-1 ' : ''}
                 ${contextMenu && !isSelected ? 'bg-zinc-100 dark:bg-gray-800/50 border border-blue-200 dark:border-yellow-500 border-dashed' : ''}
@@ -667,12 +667,12 @@ export default function BlockEditor({
             draggable={false}
         >
             {/* Block actions - visible on hover */}
-            <div className={`flex  gap-0.5 pt-1.5 flex-shrink-0 transition-opacity duration-150
-                ${isHovered ? 'opacity-100' : 'opacity-0'}`}
+            <div className={`flex gap-0.5 pt-1.5 flex-shrink-0 transition-opacity duration-150
+                ${isHovered ? 'opacity-100' : 'opacity-100 sm:opacity-0'}`}
             >
                 <button
                     onClick={(e) => { e.stopPropagation(); onEnter() }}
-                    className="p-1 rounded hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
+                    className="p-1.5 sm:p-1 rounded hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
                     title="Add block below"
                 >
                     <Plus size={14} className="text-gray-400 dark:text-gray-500" />
@@ -682,7 +682,7 @@ export default function BlockEditor({
                     onDragStart={handleDragStartEvent}
                     onDragEnd={handleDragEndEvent}
                     onClick={handleContextMenu}
-                    className="cursor-grab active:cursor-grabbing p-1 rounded hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
+                    className="cursor-grab active:cursor-grabbing p-1.5 sm:p-1 rounded hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
                     title="Drag to move block"
                 >
                     <GripVertical size={14} className="text-gray-400 dark:text-gray-500" />
@@ -717,7 +717,7 @@ export default function BlockEditor({
                         />
                         <div className={`overflow-hidden transition-all duration-200 ${block.toggleOpen ? 'max-h-[9999px] opacity-100' : 'max-h-0 opacity-0'}`}>
                             {renderChildrenBlocks(
-                                'ml-7 mt-1 pl-3 border-l-2 border-gray-200 dark:border-gray-700 space-y-0.5'
+                                    'ml-4 sm:ml-7 mt-1 pl-2 sm:pl-3 border-l-2 border-gray-200 dark:border-gray-700 space-y-0.5'
                             )}
                         </div>
                     </div>
@@ -733,7 +733,7 @@ export default function BlockEditor({
                         {(block.children && block.children.length > 0) && (
                             <div className="mt-1">
                                 {renderChildrenBlocks(
-                                    'ml-12 pl-3 border-l-2 border-gray-200/50 dark:border-gray-700/50 space-y-0.5'
+                                    'ml-5 sm:ml-12 pl-2 sm:pl-3 border-l-2 border-gray-200/50 dark:border-gray-700/50 space-y-0.5'
                                 )}
                             </div>
                         )}

@@ -170,8 +170,8 @@ export default function Sidebar({
     )
 
     return (
-        <div className="w-60 bg-[#fbfbfa] dark:bg-[#191919] border-r border-gray-200/80
-                    dark:border-gray-800 flex flex-col h-screen select-none">
+        <div className="w-full md:w-60 bg-[#fbfbfa] dark:bg-[#191919] border-r border-gray-200/80
+                    dark:border-gray-800 flex flex-col h-full md:h-screen select-none">
             {/* Header */}
             <div className="p-3 border-b border-gray-200/60 dark:border-gray-800/60">
                 <div className="flex items-center justify-between mb-3">

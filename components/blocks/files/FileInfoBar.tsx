@@ -6,10 +6,10 @@ export function FileInfoBar({ name, size, mime, url }: { name?: string; size?: n
     const ext = mime?.split('/').pop()?.toUpperCase()
     return (
         <a href={url} target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-3 px-3 py-2.5 no-underline hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
+            className="flex items-center gap-2 sm:gap-3 px-3 py-2.5 no-underline hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors min-w-0">
             <File size={16} className="text-gray-400 flex-shrink-0" />
             <span className="truncate text-sm font-medium text-gray-700 dark:text-gray-300">{name || 'File'}</span>
-            <span className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">
+            <span className="flex items-center gap-1.5 sm:gap-2 text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">
                 {size != null && <span>{formatFileSize(size)}</span>}
                 {ext && (
                     <>

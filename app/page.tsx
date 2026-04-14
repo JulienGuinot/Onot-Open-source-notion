@@ -68,6 +68,7 @@ export default function Home() {
     const [syncModalOpen, setSyncModalOpen] = useState(false)
 
     const [sidebarOpen, setSidebarOpen] = useState(true)
+    const [isMobile, setIsMobile] = useState(false)
     const { user, isGuest, profile, needsProfileSetup, completeProfileSetup, signOut } = useAuth()
     const {
         workspace, workspaces, pages, onlineUsers, userRole, conflictPageId,
@@ -80,12 +81,29 @@ export default function Home() {
 
     const pageOrder = workspace?.pageOrder ?? []
 
+    useEffect(() => {
+        const mediaQuery = window.matchMedia('(max-width: 767px)')
+        const handleChange = () => {
+            setIsMobile(mediaQuery.matches)
+            setSidebarOpen(!mediaQuery.matches)
+        }
+
+        handleChange()
+        mediaQuery.addEventListener('change', handleChange)
+        return () => mediaQuery.removeEventListener('change', handleChange)
+    }, [])
+
     const selectPage = useCallback((pageId: string | null) => {
         setCurrentPageId(pageId)
         if (workspace?.id && pageId && isEditablePage(pages[pageId])) {
             saveLastPageId(workspace.id, pageId)
         }
     }, [pages, workspace?.id])
+
+    const handleSelectPage = useCallback((pageId: string) => {
+        selectPage(pageId)
+        if (isMobile) setSidebarOpen(false)
+    }, [isMobile, selectPage])
 
     useEffect(() => {
         if (!workspace) return
@@ -238,10 +256,21 @@ export default function Home() {
     const isViewer = userRole === 'viewer'
 
     return (
-        <div className="flex h-screen bg-white dark:bg-zinc-800 transition-colors">
+        <div className="flex h-dvh overflow-hidden bg-white dark:bg-zinc-800 transition-colors">
             {/* Sidebar */}
+            {isMobile && sidebarOpen && (
+                <button
+                    type="button"
+                    aria-label="Close sidebar"
+                    className="fixed inset-0 z-30 bg-black/35 backdrop-blur-[1px] md:hidden"
+                    onClick={() => setSidebarOpen(false)}
+                />
+            )}
             <div
-                className={`transition-all duration-300 ease-in-out overflow-hidden ${sidebarOpen ? 'w-60' : 'w-0'
+                className={`transition-all duration-300 ease-in-out overflow-hidden
+                    ${isMobile
+                        ? `fixed inset-y-0 left-0 z-40 w-72 max-w-[86vw] shadow-2xl ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
+                        : `${sidebarOpen ? 'w-60' : 'w-0'}`
                     }`}
             >
                 <Sidebar
@@ -256,7 +285,7 @@ export default function Home() {
                     profile={profile}
                     userEmail={user?.email}
                     userId={user?.id}
-                    onSelectPage={selectPage}
+                    onSelectPage={handleSelectPage}
                     onCreatePage={(parentId) => handleCreatePage(parentId ?? null)}
                     onCreateFolder={(parentId) => handleCreateFolder(parentId ?? null)}
                     onDeletePage={handleDeletePage}
@@ -278,17 +307,17 @@ export default function Home() {
             {/* Main area */}
             <div className="flex-1 flex flex-col min-w-0">
                 {/* Top bar */}
-                <div className="px-4 py-2.5 flex items-center gap-3 z-10">
+                <div className="px-2 sm:px-4 py-2.5 flex items-center gap-1.5 sm:gap-3 z-10 border-b border-gray-100/80 dark:border-zinc-700/50 md:border-b-0">
                     <button
                         onClick={() => setSidebarOpen(!sidebarOpen)}
-                        className="p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-md transition-colors"
+                        className="p-2 sm:p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-md transition-colors"
                         title={sidebarOpen ? 'Close sidebar (⌘\\)' : 'Open sidebar (⌘\\)'}
                     >
                         <PanelLeft size={18} className="text-gray-500 dark:text-gray-400" />
                     </button>
 
                     {currentPage && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 truncate">
+                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 truncate min-w-0 max-w-[44vw] sm:max-w-none">
                             {currentPage.icon && <span>{currentPage.icon}</span>}
                             <span className="truncate">{currentPage.title || 'Untitled'}</span>
                         </div>
@@ -305,10 +334,10 @@ export default function Home() {
                     {user && !isGuest && userRole === 'owner' && (
                         <button
                             onClick={() => setShowShare(true)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                         >
                             <Share2 size={14} />
-                            Share
+                            <span className="hidden sm:inline">Share</span>
                         </button>
                     )}
 
@@ -320,8 +349,8 @@ export default function Home() {
                                     e.preventDefault()
                                     setWsContextMenu(true)
                                 }}
-                                className="flex text-sm text-blue-600 bg-blue-500/10 dark:bg-zinc-700/30 cursor-pointer dark:text-gray-400 rounded-lg px-2 py-0.5">
-                                {workspace.name}
+                                className="hidden sm:flex text-sm text-blue-600 bg-blue-500/10 dark:bg-zinc-700/30 cursor-pointer dark:text-gray-400 rounded-lg px-2 py-0.5 max-w-[180px] truncate">
+                                <span className="truncate">{workspace.name}</span>
                                 {wsContextMenu &&
                                     <WorkspaceContextMenu
                                         workspaceName={workspace.name}
@@ -354,7 +383,7 @@ export default function Home() {
                         <div className="relative">
                             <button
                                 onClick={() => setEmailClicked(!emailClicked)}
-                                className="flex items-center gap-2 px-2 py-1.5 rounded-lg
+                                className="flex items-center gap-1 sm:gap-2 px-1.5 sm:px-2 py-1.5 rounded-lg
                                            hover:bg-gray-100 dark:hover:bg-zinc-700/50 transition-colors"
                             >
                                 <UserAvatar

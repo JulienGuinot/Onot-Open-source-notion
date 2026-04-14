@@ -109,7 +109,7 @@ export default function ImageBlock({ block, onUpdate, onKeyDown }: ImageBlockPro
                     
                     {/* Image overlay controls */}
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors">
-                        <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute top-2 right-2 flex gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                             <button
                                 onClick={() => setShowUrlInput(true)}
                                 className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
@@ -145,7 +145,7 @@ export default function ImageBlock({ block, onUpdate, onKeyDown }: ImageBlockPro
 
     return (
         <div
-            className={`relative rounded-xl border-2 border-dashed transition-all duration-200
+            className={`relative rounded-lg border-2 border-dashed transition-all duration-200
                 ${isDragging 
                     ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20' 
                     : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
@@ -164,7 +164,7 @@ export default function ImageBlock({ block, onUpdate, onKeyDown }: ImageBlockPro
                 className="hidden"
             />
 
-            <div className="p-8 flex flex-col items-center justify-center gap-4">
+            <div className="p-4 sm:p-8 flex flex-col items-center justify-center gap-4">
                 {imageError ? (
                     <>
                         <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
@@ -206,7 +206,7 @@ export default function ImageBlock({ block, onUpdate, onKeyDown }: ImageBlockPro
                                     </div>
                                 </div>
 
-                                <div className="flex gap-2">
+                                <div className="flex flex-wrap justify-center gap-2">
                                     <button
                                         onClick={() => fileInputRef.current?.click()}
                                         className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-800 
@@ -236,7 +236,7 @@ export default function ImageBlock({ block, onUpdate, onKeyDown }: ImageBlockPro
 
                 {/* URL Input */}
                 {(showUrlInput || imageError) && !isDragging && (
-                    <div className="w-full max-w-md flex gap-2 mt-2">
+                    <div className="w-full max-w-md flex flex-col sm:flex-row gap-2 mt-2">
                         <input
                             ref={urlInputRef}
                             type="text"

@@ -130,13 +130,13 @@ export default function SearchModal({ pages, isOpen, onClose, onSelectPage }: Se
 
     return (
         <div
-            className="fixed inset-0 bg-black/40 dark:bg-black/60 flex items-start justify-center pt-[15vh] z-50 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/40 dark:bg-black/60 flex items-start justify-center px-3 pt-4 sm:pt-[15vh] z-50 backdrop-blur-sm"
             onClick={(e) => {
                 if (e.target === e.currentTarget) onClose()
             }}
         >
             <div 
-                className="bg-white dark:bg-[#252525] rounded-2xl shadow-2xl w-full max-w-xl 
+                className="bg-white dark:bg-[#252525] rounded-lg sm:rounded-2xl shadow-2xl w-full max-w-xl 
                            border border-gray-200/50 dark:border-gray-700/50 overflow-hidden 
                            animate-in fade-in zoom-in-95 duration-150"
                 style={{
@@ -185,7 +185,7 @@ export default function SearchModal({ pages, isOpen, onClose, onSelectPage }: Se
                 </div>
 
                 {/* Results */}
-                <div ref={resultsRef} className="max-h-[360px] overflow-y-auto">
+                <div ref={resultsRef} className="max-h-[min(360px,calc(100dvh-12rem))] overflow-y-auto">
                     {searchResults.length === 0 && (
                         <div className="py-12 text-center">
                             <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
@@ -266,8 +266,8 @@ export default function SearchModal({ pages, isOpen, onClose, onSelectPage }: Se
                 </div>
 
                 {/* Footer */}
-                <div className="px-4 py-2.5 border-t border-gray-200/80 dark:border-gray-700/50 
-                                flex items-center justify-between text-[11px] text-gray-400 dark:text-gray-500 
+                <div className="hidden sm:flex px-4 py-2.5 border-t border-gray-200/80 dark:border-gray-700/50 
+                                items-center justify-between text-[11px] text-gray-400 dark:text-gray-500 
                                 bg-gray-50/50 dark:bg-gray-800/30">
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-1.5">

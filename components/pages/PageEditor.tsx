@@ -522,12 +522,12 @@ export default function PageEditor({
     // ─── Render ─────────────────────────────────────────────────
 
     return (
-        <div ref={containerRef} className="flex-1 overflow-y-auto scroll-smooth">
+        <div ref={containerRef} className="flex-1 overflow-y-auto scroll-smooth overscroll-contain">
             {/* Undo/Redo/Clipboard Toast */}
             {(showUndoToast || showClipboardToast) && (
-                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-200">
+                <div className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-200 w-[calc(100vw-2rem)] sm:w-auto">
                     <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-900 dark:bg-gray-100
-                                    text-white dark:text-gray-900 rounded-lg shadow-xl">
+                                    text-white dark:text-gray-900 rounded-lg shadow-xl justify-center">
                         {showUndoToast === 'undo' && <><Undo2 size={16} /><span className="text-sm font-medium">Action annulée</span></>}
                         {showUndoToast === 'redo' && <><Redo2 size={16} /><span className="text-sm font-medium">Action rétablie</span></>}
                         {showClipboardToast === 'copy' && <><Copy size={16} /><span className="text-sm font-medium">{selectedBlockIds.size || ''} bloc{selectedBlockIds.size > 1 ? 's' : ''} copié{selectedBlockIds.size > 1 ? 's' : ''}</span></>}
@@ -538,9 +538,9 @@ export default function PageEditor({
             )}
 
             {/* Undo/Redo Floating Buttons */}
-            <div className="fixed bottom-6 right-6 z-40 flex items-center gap-1 bg-white dark:bg-gray-800
+            <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex items-center gap-1 bg-white dark:bg-gray-800
                             rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-1
-                            opacity-60 hover:opacity-100 transition-opacity">
+                            opacity-90 sm:opacity-60 hover:opacity-100 transition-opacity">
                 <button
                     onClick={handleUndo}
                     disabled={!canUndo}
@@ -568,9 +568,9 @@ export default function PageEditor({
 
             {/* Selection info bar */}
             {selectedBlockIds.size > 0 && (
-                <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                    <div className="flex items-center gap-3 px-4 py-2.5 bg-blue-600 dark:bg-blue-500
-                                    text-white rounded-xl shadow-xl text-sm font-medium">
+                <div className="fixed top-3 sm:top-4 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-2 duration-200 w-[calc(100vw-1rem)] sm:w-auto">
+                    <div className="flex items-center justify-center gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 bg-blue-600 dark:bg-blue-500
+                                    text-white rounded-xl shadow-xl text-sm font-medium flex-wrap">
                         <span>{selectedBlockIds.size} bloc{selectedBlockIds.size > 1 ? 's' : ''} sélectionné{selectedBlockIds.size > 1 ? 's' : ''}</span>
                         <div className="w-px h-4 bg-blue-400/50" />
                         <button onClick={handleCopy} className="hover:bg-blue-500 dark:hover:bg-blue-400 px-2 py-1 rounded-lg transition-colors flex items-center gap-1.5" title="Copier (Ctrl+C)">
@@ -622,7 +622,7 @@ export default function PageEditor({
             )}
 
             {/* Page Icon and Title */}
-            <div className="max-w-12xl mx-auto px-8 pt-8 pb-4">
+            <div className="max-w-12xl mx-auto px-4 sm:px-8 pt-6 sm:pt-8 pb-4">
                 <EmojiPicker
                     currentEmoji={page.icon}
                     onSelect={(emoji) =>
@@ -644,14 +644,14 @@ export default function PageEditor({
                         })
                     }
                     placeholder="Untitled"
-                    className="text-4xl font-bold outline-none w-full bg-transparent tracking-tight
+                    className="text-3xl sm:text-4xl font-bold outline-none w-full bg-transparent tracking-tight
                              dark:text-gray-100 text-gray-900 transition-colors mt-4
                              placeholder:text-gray-300 dark:placeholder:text-gray-600"
                 />
             </div>
 
             {/* Blocks */}
-            <div className="max-w-12xl mx-auto px-8 pb-32">
+            <div className="max-w-12xl mx-auto px-3 sm:px-8 pb-32">
                 {page.blocks.length === 0 ? (
                     <div
                         className="py-8 text-center cursor-pointer group"
@@ -718,7 +718,7 @@ export default function PageEditor({
                 {/* Add block at the end */}
                 {page.blocks.length > 0 && (
                     <div
-                        className="py-4 mt-2 cursor-pointer group opacity-0 hover:opacity-100 transition-opacity"
+                        className="py-4 mt-2 cursor-pointer group opacity-100 sm:opacity-0 hover:opacity-100 transition-opacity"
                         onClick={() => handleAddBlock(page.blocks.length - 1, '', 'text')}
                     >
                         <div className="text-sm text-gray-400 dark:text-gray-500">

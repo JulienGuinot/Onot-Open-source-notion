@@ -64,10 +64,10 @@ export default function MapBlock({ block, onUpdate, onKeyDown }: MapBlockProps) 
         const embedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(placeValue)}&output=embed`
 
         return (
-            <div className="relative group w-full rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800">
+            <div className="relative group w-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-800">
                 <iframe
                     width="100%"
-                    height="400"
+                    height="360"
                     style={{ border: 0 }}
                     loading="lazy"
                     allowFullScreen
@@ -75,7 +75,7 @@ export default function MapBlock({ block, onUpdate, onKeyDown }: MapBlockProps) 
                 />
 
                 {/* Bouton pour modifier/supprimer la carte au survol */}
-                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                <div className="absolute top-2 right-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
                     <button
                         onClick={handleRemove}
                         className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
@@ -92,13 +92,13 @@ export default function MapBlock({ block, onUpdate, onKeyDown }: MapBlockProps) 
 
     return (
         <div
-            className={`relative rounded-xl border-2 border-dashed transition-all duration-200
+            className={`relative rounded-lg border-2 border-dashed transition-all duration-200
                 ${inputError
                     ? 'border-red-300 dark:border-red-800'
                     : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                 }`}
         >
-            <div className="p-8 flex flex-col items-center justify-center gap-4">
+            <div className="p-4 sm:p-8 flex flex-col items-center justify-center gap-4">
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center
                     ${inputError ? 'bg-red-100 dark:bg-red-900/30' : 'bg-blue-50 dark:bg-blue-900/20'}`}
                 >
@@ -121,7 +121,7 @@ export default function MapBlock({ block, onUpdate, onKeyDown }: MapBlockProps) 
                     </div>
                 </div>
 
-                <div className="w-full max-w-md flex gap-2">
+                <div className="w-full max-w-md flex flex-col sm:flex-row gap-2">
                     <input
                         ref={inputRef}
                         type="text"

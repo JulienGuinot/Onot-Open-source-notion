@@ -78,15 +78,15 @@ export default function ShareModal({ isOpen, onClose }: ShareModalProps) {
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
-            <div className="relative w-full max-w-lg bg-white dark:bg-[#1e1e1e] rounded-2xl shadow-2xl
-                            border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="relative w-full max-w-lg max-h-[92dvh] bg-white dark:bg-[#1e1e1e] rounded-t-lg sm:rounded-lg shadow-2xl
+                            border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col">
                 {/* Header */}
-                <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
-                    <div>
-                        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                <div className="flex items-start justify-between gap-3 p-4 sm:p-5 border-b border-gray-200 dark:border-gray-700">
+                    <div className="min-w-0">
+                        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 truncate">
                             Share &ldquo;{workspace.name}&rdquo;
                         </h2>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
@@ -101,7 +101,7 @@ export default function ShareModal({ isOpen, onClose }: ShareModalProps) {
                     </button>
                 </div>
 
-                <div className="p-5 space-y-6">
+                <div className="p-4 sm:p-5 space-y-6 overflow-y-auto">
                     {/* Invite link generator */}
                     {isOwner && (
                         <div className="space-y-3">
@@ -110,7 +110,7 @@ export default function ShareModal({ isOpen, onClose }: ShareModalProps) {
                                 Create invite link
                             </div>
 
-                            <div className="flex gap-2">
+                            <div className="flex flex-col sm:flex-row gap-2">
                                 <select
                                     value={inviteRole}
                                     onChange={(e) => setInviteRole(e.target.value as 'editor' | 'viewer')}
@@ -169,14 +169,14 @@ export default function ShareModal({ isOpen, onClose }: ShareModalProps) {
                                 return (
                                     <div
                                         key={inv.id}
-                                        className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm
+                                        className={`flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm
                                                    ${expired
                                                 ? 'bg-gray-50 dark:bg-gray-800/50 opacity-50'
                                                 : 'bg-gray-50 dark:bg-gray-800/50'}`}
                                     >
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-2 min-w-0">
                                             <Link2 size={14} className="text-gray-400" />
-                                            <span className="text-gray-600 dark:text-gray-400">
+                                            <span className="text-gray-600 dark:text-gray-400 truncate">
                                                 {inv.role} link
                                             </span>
                                             {expired && (
@@ -209,10 +209,10 @@ export default function ShareModal({ isOpen, onClose }: ShareModalProps) {
                                 return (
                                     <div
                                         key={member.user_id}
-                                        className="flex items-center justify-between px-3 py-2.5 rounded-lg
+                                        className="flex items-center justify-between gap-3 px-2 sm:px-3 py-2.5 rounded-lg
                                                    hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group"
                                     >
-                                        <div className="flex items-center gap-3 min-w-0">
+                                        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                                             <UserAvatar
                                                 avatarUrl={p?.avatar_url}
                                                 firstName={p?.first_name}
@@ -222,7 +222,7 @@ export default function ShareModal({ isOpen, onClose }: ShareModalProps) {
                                                 size="md"
                                             />
                                             <div className="min-w-0">
-                                                <div className="text-sm text-gray-800 dark:text-gray-200 flex items-center gap-1.5">
+                                                <div className="text-sm text-gray-800 dark:text-gray-200 flex items-center gap-1.5 min-w-0">
                                                     <span className="truncate">{displayName}</span>
                                                     {isMe && (
                                                         <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium shrink-0">

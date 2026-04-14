@@ -92,7 +92,7 @@ export default function YoutubeBlock({ block, onUpdate, onKeyDown }: YoutubeBloc
                     />
 
                     {/* Overlay controls */}
-                    <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute top-2 right-2 flex gap-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                             onClick={() => { setShowUrlInput(true); setUrlValue(block.youtubeUrl || '') }}
                             className="p-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg
@@ -119,13 +119,13 @@ export default function YoutubeBlock({ block, onUpdate, onKeyDown }: YoutubeBloc
 
     return (
         <div
-            className={`relative rounded-xl border-2 border-dashed transition-all duration-200
+            className={`relative rounded-lg border-2 border-dashed transition-all duration-200
                 ${urlError
                     ? 'border-red-300 dark:border-red-800'
                     : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                 }`}
         >
-            <div className="p-8 flex flex-col items-center justify-center gap-4">
+            <div className="p-4 sm:p-8 flex flex-col items-center justify-center gap-4">
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center
                     ${urlError ? 'bg-red-100 dark:bg-red-900/30' : 'bg-red-50 dark:bg-red-900/20'}`}
                 >
@@ -148,7 +148,7 @@ export default function YoutubeBlock({ block, onUpdate, onKeyDown }: YoutubeBloc
                     </div>
                 </div>
 
-                <div className="w-full max-w-md flex gap-2">
+                <div className="w-full max-w-md flex flex-col sm:flex-row gap-2">
                     <input
                         ref={urlInputRef}
                         type="text"

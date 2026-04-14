@@ -150,28 +150,28 @@ export default function DrawingBlock({ block, onUpdate, onKeyDown }: DrawingBloc
     }), [])
 
     // Calculate dimensions
-    const containerHeight = isExpanded ? '90vh' : 280
-    const canvasHeight = isExpanded ? 'calc(90vh - 60px)' : 240
+    const containerHeight = isExpanded ? '100dvh' : 280
+    const canvasHeight = isExpanded ? 'calc(100dvh - 60px)' : 240
 
     return (
         <div
-            className={`relative border rounded-xl overflow-hidden transition-all duration-300 ${isExpanded
+            className={`relative border rounded-lg overflow-hidden transition-all duration-300 ${isExpanded
                 ? 'fixed inset-0 z-50 m-0 rounded-none border-0 shadow-2xl'
                 : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-zinc-900 shadow-sm hover:shadow-md'
                 }`}
-            style={{ height: isExpanded ? '100vh' : containerHeight }}
+            style={{ height: isExpanded ? '100dvh' : containerHeight }}
             onKeyDown={handleKeyDown}
             tabIndex={0}
         >
             {/* Header / Toolbar */}
-            <div className={`flex items-center rounded-t-md justify-between px-4 py-3 border-b ${isExpanded
+            <div className={`flex items-center rounded-t-md justify-between gap-2 px-3 sm:px-4 py-3 border-b ${isExpanded
                 ? 'bg-white dark:bg-zinc-900 border-gray-200 dark:border-gray-700'
                 : 'bg-gray-50/50 dark:bg-zinc-800/50 border-gray-200 dark:border-gray-700'
                 }`}>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-w-0">
                     <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                         <Pencil size={16} />
-                        <span className="text-sm font-medium">
+                        <span className="text-sm font-medium truncate">
                             {isExpanded ? 'Edit mode' : 'Drawing'}
                         </span>
                     </div>
@@ -187,13 +187,13 @@ export default function DrawingBlock({ block, onUpdate, onKeyDown }: DrawingBloc
                     )}
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-end">
                     {isExpanded ? (
                         <>
                             {/* Save button */}
                             <button
                                 onClick={() => saveDrawing(true)}
-                                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 rounded-lg transition-colors"
+                                className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 rounded-lg transition-colors"
                             >
                                 <Save size={14} />
                                 Save
@@ -202,18 +202,18 @@ export default function DrawingBlock({ block, onUpdate, onKeyDown }: DrawingBloc
                             {/* Clear button */}
                             <button
                                 onClick={handleClear}
-                                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                             >
                                 <Trash2 size={14} />
                                 Erase
                             </button>
 
-                            <div className="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1" />
+                            <div className="hidden sm:block w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1" />
 
                             {/* Collapse button */}
                             <button
                                 onClick={handleCollapse}
-                                className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+                                className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-zinc-800 rounded-lg transition-colors"
                             >
                                 <Minimize2 size={14} />
                                 Reduce
@@ -223,8 +223,7 @@ export default function DrawingBlock({ block, onUpdate, onKeyDown }: DrawingBloc
                         /* Expand button */
                         <button
                             onClick={handleExpand}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-zinc-800 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
-                            style={{ opacity: 1 }}
+                            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-zinc-800 rounded-lg transition-colors opacity-100 sm:opacity-0 group-hover:opacity-100 focus:opacity-100"
                         >
                             <Maximize2 size={14} />
                             Zoom
@@ -236,7 +235,7 @@ export default function DrawingBlock({ block, onUpdate, onKeyDown }: DrawingBloc
             {/* Canvas Container */}
             <div
                 className="relative w-full"
-                style={{ height: isExpanded ? 'calc(100vh - 60px)' : canvasHeight }}
+                style={{ height: isExpanded ? 'calc(100dvh - 60px)' : canvasHeight }}
                 onClick={() => !isExpanded && handleExpand()}
             >
                 {/* Click overlay for collapsed mode */}

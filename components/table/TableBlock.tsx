@@ -820,10 +820,10 @@ export default function TableBlock({ block, onUpdate, onNavigateToPreviousBlock,
     <div
       ref={tableRef}
       data-table-block
-      className="my-4 rounded-xl overflow-hidden border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 shadow-sm"
+      className="my-4 max-w-full rounded-lg overflow-hidden border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 shadow-sm"
     >
       {/* Toolbar */}
-      <div className="flex items-center gap-1 px-3 py-2 bg-gray-50/80 dark:bg-zinc-800/50
+      <div className="flex items-center gap-1 px-2 sm:px-3 py-2 bg-gray-50/80 dark:bg-zinc-800/50
                       border-b border-gray-200 dark:border-gray-700 flex-wrap backdrop-blur-sm">
         <button
           onClick={() => {
@@ -881,9 +881,9 @@ export default function TableBlock({ block, onUpdate, onNavigateToPreviousBlock,
           </div>
         )}
 
-        <div className="flex-1" />
+        <div className="flex-1 min-w-[1rem]" />
 
-        <span className="text-xs text-gray-400 font-medium">
+        <span className="text-xs text-gray-400 font-medium hidden sm:inline">
           {tableData.rows.length} rows · {visibleColumns.length} columns
         </span>
       </div>
@@ -946,7 +946,7 @@ export default function TableBlock({ block, onUpdate, onNavigateToPreviousBlock,
 
       {/* Table */}
       <div className="overflow-x-auto table-scroll">
-        <table className="w-full border-collapse">
+        <table className="w-full min-w-max border-collapse">
           <thead>
             <tr className="bg-gray-50 dark:bg-zinc-800/50">
               {/* Row handle column */}
@@ -1158,11 +1158,11 @@ export default function TableBlock({ block, onUpdate, onNavigateToPreviousBlock,
       </div>
 
       {/* Footer actions */}
-      <div className="flex items-center border-t border-gray-100 dark:border-zinc-800">
+      <div className="flex items-stretch border-t border-gray-100 dark:border-zinc-800">
         {/* Add row */}
         <button
           onClick={() => addRow()}
-          className="flex-1 flex items-center gap-2 px-4 py-2.5 text-sm text-gray-500
+          className="flex-1 flex items-center gap-2 px-3 sm:px-4 py-2.5 text-sm text-gray-500
                      hover:bg-gray-50 dark:hover:bg-zinc-800/30 transition-colors"
         >
           <Plus size={14} />
@@ -1173,7 +1173,7 @@ export default function TableBlock({ block, onUpdate, onNavigateToPreviousBlock,
         <div className="relative">
           <button
             onClick={() => setShowCalcMenu(showCalcMenu ? null : 'menu')}
-            className="flex items-center gap-1.5 px-4 py-2.5 text-sm text-gray-500
+            className="flex items-center gap-1.5 px-3 sm:px-4 py-2.5 text-sm text-gray-500
                        hover:bg-gray-50 dark:hover:bg-zinc-800/30 transition-colors border-l border-gray-100 dark:border-zinc-800"
           >
             <Calculator size={14} />
@@ -1181,7 +1181,7 @@ export default function TableBlock({ block, onUpdate, onNavigateToPreviousBlock,
           </button>
 
           {showCalcMenu && (
-            <div className="absolute bottom-full right-0 mb-1 z-50 min-w-[300px] max-h-[320px] overflow-auto bg-white dark:bg-zinc-800 rounded-xl shadow-2xl border border-gray-200 dark:border-zinc-700 menu-animate">
+            <div className="absolute bottom-full right-0 mb-1 z-50 w-[calc(100vw-2rem)] sm:w-auto sm:min-w-[300px] max-h-[320px] overflow-auto bg-white dark:bg-zinc-800 rounded-lg shadow-2xl border border-gray-200 dark:border-zinc-700 menu-animate">
               <div className="p-2">
                 <div className='flex justify-between items-center'>
                   <div className="text-xs text-gray-500 px-3 py-2 uppercase tracking-wide font-medium">Column calculations</div>

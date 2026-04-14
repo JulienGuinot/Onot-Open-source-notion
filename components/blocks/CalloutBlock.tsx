@@ -61,7 +61,7 @@ export default function CalloutBlock({ block, onUpdate, onKeyDown, autoFocus }: 
     const commonEmojis = ['💡', '⚠️', '✅', '❌', '📝', '🔥', '⭐', '💜', '🎯', '🚀', '💪', '📌', '🔔', '✨', '💬', '❓']
 
     return (
-        <div className={`flex items-start gap-3 p-4 rounded-xl ${bgClass} border ${borderClass}
+        <div className={`flex items-start gap-2 sm:gap-3 p-3 sm:p-4 rounded-lg ${bgClass} border ${borderClass}
                         transition-all duration-200 hover:shadow-sm group`}>
             {/* Icon button */}
             <div className="relative">
@@ -80,8 +80,8 @@ export default function CalloutBlock({ block, onUpdate, onKeyDown, autoFocus }: 
                             className="fixed inset-0 z-40"
                             onClick={() => setShowIconPicker(false)}
                         />
-                        <div className="absolute top-full left-0 mt-2 z-50 bg-white dark:bg-gray-800 rounded-xl shadow-xl
-                                        border border-gray-200 dark:border-gray-700 p-3 w-64 menu-animate">
+                        <div className="absolute top-full left-0 mt-2 z-50 bg-white dark:bg-gray-800 rounded-lg shadow-xl
+                                        border border-gray-200 dark:border-gray-700 p-3 w-64 max-w-[calc(100vw-3rem)] menu-animate">
                             <div className="text-xs font-medium text-gray-400 dark:text-gray-500 mb-2 uppercase tracking-wider">
                                 Choose icon
                             </div>
