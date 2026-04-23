@@ -5,6 +5,7 @@ import type { User } from "@supabase/supabase-js"
 import type { UserProfile } from "@/lib/types"
 import supabase from "@/lib/supabase"
 import { fetchProfile, upsertProfile } from "@/lib/operations/profiles"
+import { loadCachedProfile, saveCachedProfile } from "@/lib/storage"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -45,8 +46,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [loading, setLoading] = useState(true)
 
     const loadProfile = useCallback(async (userId: string) => {
+        const cached = loadCachedProfile(userId)
+        if (cached) setProfile(cached)
+
         const p = await fetchProfile(userId)
-        setProfile(p)
+        if (p) {
+            saveCachedProfile(p)
+            setProfile(p)
+        } else if (!cached) {
+            setProfile(null)
+        }
     }, [])
 
     useEffect(() => {
@@ -55,12 +64,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 const savedMode = localStorage.getItem(AUTH_MODE_KEY) as AuthMode | null
 
                 if (supabase) {
-                    const { data } = await supabase.auth.getUser()
-                    if (data?.user) {
-                        setUser(data.user)
+                    const { data: sessionData } = await supabase.auth.getSession()
+                    const sessionUser = sessionData.session?.user ?? null
+
+                    if (sessionUser) {
+                        setUser(sessionUser)
                         setMode('authenticated')
                         localStorage.setItem(AUTH_MODE_KEY, 'authenticated')
-                        await loadProfile(data.user.id)
+                        await loadProfile(sessionUser.id)
                     } else if (savedMode === 'guest') {
                         setMode('guest')
                     }
@@ -166,6 +177,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             ...data,
         })
         if (!updated) throw new Error('Failed to save profile')
+        saveCachedProfile(updated)
         setProfile(updated)
     }, [user])
 

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent, DragEvent as ReactDragEvent } from 'react'
+import dynamic from 'next/dynamic'
 import { Block, BlockType } from '@/lib/types'
 import { GripVertical, Plus } from 'lucide-react'
 import { createBlock, deepDuplicateBlock } from '@/lib/blockUtils'
@@ -19,7 +20,13 @@ import SlashMenu from '@/components/SlashMenu'
 import { useSlashMenu } from '@/hooks/useSlashMenu'
 import { useContainerChildren } from '@/hooks/useContainerChildren'
 import MapBlock from './MapBlock'
-import DrawingBlock from './DrawingBlock'
+
+const DrawingBlock = dynamic(() => import('./DrawingBlock'), {
+    ssr: false,
+    loading: () => (
+        <div className="min-h-[280px] rounded-lg border border-gray-200 bg-gray-50 dark:border-zinc-700 dark:bg-zinc-900" />
+    ),
+})
 
 // ─── Constants ───────────────────────────────────────────────
 

@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react"
 import type { WorkspaceData, Page, WorkspaceMember, WorkspaceInvite, MemberRole, PresenceUser } from "@/lib/types"
 import { useAuth } from "./AuthProvider"
-import { loadAppData, saveAppData, createEmptyWorkspace, loadCurrentWorkspaceId, saveCurrentWorkspaceId, getDefaultPages } from "@/lib/storage"
+import { loadAppData, saveAppData, createEmptyWorkspace, loadCurrentWorkspaceId, saveCurrentWorkspaceId, getDefaultPages, loadCloudAppData, saveCloudWorkspaceSnapshot, clearCloudWorkspaceDirty, isCloudWorkspaceDirty } from "@/lib/storage"
 import type { RealtimeChannel } from "@supabase/supabase-js"
 import { subscribeToPagesChanges, subscribeToPresence, subscribeToWorkspaceChanges, unsubscribeChannel } from "@/lib/operations/realtime"
 import { deletePageFromCloud, fetchWorkspacePages, savePageToCloud } from "@/lib/operations/pages"
@@ -68,6 +68,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     const pagesChannel = useRef<RealtimeChannel | null>(null)
     const wsChannel = useRef<RealtimeChannel | null>(null)
     const presenceChannel = useRef<RealtimeChannel | null>(null)
+    const skipNextCloudDirtySnapshot = useRef(false)
 
     // Refs miroirs — toujours à jour, utilisés dans syncNow pour éviter les closures stale
     const pagesRef = useRef(pages)
@@ -105,6 +106,51 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
             app.workspaces[currentWsId] = { ...ws, pages: nextPages }
             app.currentWorkspaceId = currentWsId
             saveAppData(app)
+        }
+    }
+
+    function loadCachedCloudWorkspace(userId: string) {
+        const cached = loadCloudAppData(userId)
+        if (!cached) return false
+
+        const wsList = Object.values(cached.workspaces).map(({ id, name, pageOrder, darkMode, role }) => ({
+            id,
+            name,
+            pageOrder,
+            darkMode,
+            role,
+        }))
+        const savedId = loadCurrentWorkspaceId()
+        const startId = wsList.find(w => w.id === savedId)?.id ?? cached.currentWorkspaceId ?? wsList[0]?.id ?? null
+
+        setWorkspaces(wsList)
+        setCurrentWsId(startId)
+        setPages(startId ? cached.workspaces[startId]?.pages ?? {} : {})
+        setMembers([])
+        setInvites([])
+        setOnlineUsers([])
+        skipNextCloudDirtySnapshot.current = true
+        return true
+    }
+
+    async function syncCachedCloudWorkspace(userId: string, cached: WorkspaceData) {
+        if (!cached.pages) return
+
+        try {
+            const results = await Promise.all([
+                ...Object.values(cached.pages).map((page) => savePageToCloud(cached.id, page, userId)),
+                updateWorkspaceInCloud(cached.id, {
+                    name: cached.name,
+                    darkMode: cached.darkMode,
+                    pageOrder: cached.pageOrder,
+                }),
+            ])
+
+            if (results.every((result) => result === true)) {
+                clearCloudWorkspaceDirty(userId, cached.id)
+            }
+        } catch (error) {
+            console.error("Failed to sync cached workspace:", error)
         }
     }
 
@@ -155,7 +201,21 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
                             fetchWorkspaceMembers(startId),
                             fetchWorkspaceInvites(startId),
                         ])
-                        if (!cancelled) { setPages(pgs); setMembers(mems); setInvites(invs) }
+                        if (!cancelled) {
+                            const cached = loadCloudAppData(user!.id)
+                            const cachedWorkspace = cached?.workspaces[startId]
+                            const hasDirtyCache = Boolean(cachedWorkspace?.pages && isCloudWorkspaceDirty(user!.id, startId))
+                            const pagesToUse = hasDirtyCache ? cachedWorkspace!.pages! : pgs
+                            const workspacesToUse = hasDirtyCache
+                                ? wsList.map(w => w.id === startId ? { ...w, ...cachedWorkspace, pages: undefined } : w)
+                                : wsList
+
+                            skipNextCloudDirtySnapshot.current = true
+                            setWorkspaces(workspacesToUse)
+                            setPages(pagesToUse); setMembers(mems); setInvites(invs)
+                            saveCloudWorkspaceSnapshot(user!.id, startId, workspacesToUse, pagesToUse)
+                            if (hasDirtyCache) void syncCachedCloudWorkspace(user!.id, cachedWorkspace!)
+                        }
                     }
                 } else {
                     const app = loadAppData()
@@ -169,6 +229,8 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
                 }
             } catch (err) {
                 console.error("Workspace load failed:", err)
+                if (isCloud && user?.id && loadCachedCloudWorkspace(user.id)) return
+
                 // Fallback to local
                 const app = loadAppData()
                 const wsList = Object.values(app.workspaces).map(({ id, name, pageOrder, darkMode }) => ({ id, name, pageOrder, darkMode }))
@@ -190,6 +252,17 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         if (currentWsId) saveCurrentWorkspaceId(currentWsId)
     }, [currentWsId])
+
+    useEffect(() => {
+        if (isCloud && user?.id && currentWsId && !loading) {
+            if (skipNextCloudDirtySnapshot.current) {
+                skipNextCloudDirtySnapshot.current = false
+                saveCloudWorkspaceSnapshot(user.id, currentWsId, workspaces, pages)
+                return
+            }
+            saveCloudWorkspaceSnapshot(user.id, currentWsId, workspaces, pages, { dirty: true })
+        }
+    }, [isCloud, user?.id, currentWsId, loading, workspaces, pages])
 
     // Realtime subscription when workspace changes
     useEffect(() => {
@@ -402,7 +475,9 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
                     fetchWorkspaceMembers(id),
                     fetchWorkspaceInvites(id),
                 ])
+                skipNextCloudDirtySnapshot.current = true
                 setPages(pgs); setMembers(mems); setInvites(invs)
+                saveCloudWorkspaceSnapshot(user!.id, id, workspacesRef.current, pgs)
             } finally {
                 setLoading(false)
             }
@@ -519,6 +594,9 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
             }
 
             const results = await Promise.all(promises)
+            if (results.every((result) => result === true)) {
+                clearCloudWorkspaceDirty(user!.id, wsId)
+            }
         } catch (err: any) {
             console.error("🟥 SYNC NOW → ERREUR DANS syncNow:", err)
             console.error("🟥 SYNC NOW → Type d'erreur:", err?.constructor?.name)

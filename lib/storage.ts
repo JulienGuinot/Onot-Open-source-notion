@@ -1,10 +1,13 @@
-import { WorkspaceData, AppData, Page } from '@/lib/types'
+import { WorkspaceData, AppData, Page, UserProfile } from '@/lib/types'
 import { generateId } from '@/lib/utils'
 
 const APP_STORAGE_KEY = 'onot-app-v4'
 const LEGACY_V3_KEY = 'onot-app-v3'
 const LEGACY_V2_KEY = 'onot-workspace-v2'
 const CURRENT_WS_KEY = 'onot-current-workspace'
+const CLOUD_CACHE_KEY = 'onot-cloud-cache-v1'
+const CLOUD_DIRTY_KEY = 'onot-cloud-dirty-v1'
+const PROFILE_CACHE_KEY = 'onot-profile-cache-v1'
 
 // ─── App Data (multi-workspace with embedded pages) ──────────
 
@@ -81,6 +84,116 @@ export const saveAppData = (appData: AppData): void => {
         }
     } catch (error) {
         console.error('Failed to save app data:', error)
+    }
+}
+
+export const loadCloudAppData = (userId: string): AppData | null => {
+    try {
+        if (typeof window === 'undefined') return null
+        const raw = localStorage.getItem(CLOUD_CACHE_KEY)
+        if (!raw) return null
+        const byUser = JSON.parse(raw) as Record<string, AppData>
+        return byUser[userId] ?? null
+    } catch {
+        return null
+    }
+}
+
+export const saveCloudAppData = (userId: string, appData: AppData): void => {
+    try {
+        if (typeof window === 'undefined') return
+        const raw = localStorage.getItem(CLOUD_CACHE_KEY)
+        const byUser = raw ? JSON.parse(raw) as Record<string, AppData> : {}
+        byUser[userId] = appData
+        localStorage.setItem(CLOUD_CACHE_KEY, JSON.stringify(byUser))
+    } catch (error) {
+        console.error('Failed to save cloud cache:', error)
+    }
+}
+
+export const saveCloudWorkspaceSnapshot = (
+    userId: string,
+    currentWorkspaceId: string,
+    workspaces: WorkspaceData[],
+    pages: Record<string, Page>,
+    options: { dirty?: boolean } = {}
+): void => {
+    const cached = loadCloudAppData(userId)
+    const next: AppData = {
+        currentWorkspaceId,
+        workspaces: cached?.workspaces ?? {},
+    }
+
+    for (const workspace of workspaces) {
+        const existingPages = next.workspaces[workspace.id]?.pages ?? {}
+        next.workspaces[workspace.id] = {
+            ...workspace,
+            pages: workspace.id === currentWorkspaceId ? pages : existingPages,
+        }
+    }
+
+    saveCloudAppData(userId, next)
+    if (options.dirty) markCloudWorkspaceDirty(userId, currentWorkspaceId)
+}
+
+function loadDirtyCloudWorkspaces(): Record<string, string[]> {
+    try {
+        if (typeof window === 'undefined') return {}
+        const raw = localStorage.getItem(CLOUD_DIRTY_KEY)
+        return raw ? JSON.parse(raw) as Record<string, string[]> : {}
+    } catch {
+        return {}
+    }
+}
+
+function saveDirtyCloudWorkspaces(value: Record<string, string[]>): void {
+    try {
+        if (typeof window === 'undefined') return
+        localStorage.setItem(CLOUD_DIRTY_KEY, JSON.stringify(value))
+    } catch {
+        /* noop */
+    }
+}
+
+export const markCloudWorkspaceDirty = (userId: string, workspaceId: string): void => {
+    const dirty = loadDirtyCloudWorkspaces()
+    const ids = new Set(dirty[userId] ?? [])
+    ids.add(workspaceId)
+    dirty[userId] = Array.from(ids)
+    saveDirtyCloudWorkspaces(dirty)
+}
+
+export const clearCloudWorkspaceDirty = (userId: string, workspaceId: string): void => {
+    const dirty = loadDirtyCloudWorkspaces()
+    dirty[userId] = (dirty[userId] ?? []).filter((id) => id !== workspaceId)
+    saveDirtyCloudWorkspaces(dirty)
+}
+
+export const isCloudWorkspaceDirty = (userId: string, workspaceId: string): boolean => {
+    return loadDirtyCloudWorkspaces()[userId]?.includes(workspaceId) ?? false
+}
+
+export const loadCachedProfile = (userId: string): UserProfile | null => {
+    try {
+        if (typeof window === 'undefined') return null
+        const raw = localStorage.getItem(PROFILE_CACHE_KEY)
+        if (!raw) return null
+        const byUser = JSON.parse(raw) as Record<string, UserProfile>
+        return byUser[userId] ?? null
+    } catch {
+        return null
+    }
+}
+
+export const saveCachedProfile = (profile: UserProfile): void => {
+    try {
+        if (typeof window === 'undefined') return
+        const raw = localStorage.getItem(PROFILE_CACHE_KEY)
+        const byUser = raw ? JSON.parse(raw) as Record<string, UserProfile> : {}
+        byUser[profile.id] = profile
+        localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(byUser))
+    } catch {
+        /* noop */
     }
 }
 

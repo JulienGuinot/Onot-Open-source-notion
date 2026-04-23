@@ -256,7 +256,7 @@ export default function Home() {
     const isViewer = userRole === 'viewer'
 
     return (
-        <div className="flex h-dvh overflow-hidden bg-white dark:bg-zinc-800 transition-colors">
+        <div className="mobile-shell flex h-dvh overflow-hidden bg-white dark:bg-zinc-800 transition-colors">
             {/* Sidebar */}
             {isMobile && sidebarOpen && (
                 <button
@@ -307,10 +307,10 @@ export default function Home() {
             {/* Main area */}
             <div className="flex-1 flex flex-col min-w-0">
                 {/* Top bar */}
-                <div className="px-2 sm:px-4 py-2.5 flex items-center gap-1.5 sm:gap-3 z-10 border-b border-gray-100/80 dark:border-zinc-700/50 md:border-b-0">
+                <div className="pwa-topbar px-2 sm:px-4 py-2.5 flex items-center gap-1.5 sm:gap-3 z-10 border-b border-gray-100/80 dark:border-zinc-700/50 md:border-b-0">
                     <button
                         onClick={() => setSidebarOpen(!sidebarOpen)}
-                        className="p-2 sm:p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-md transition-colors"
+                        className="inline-flex min-h-10 min-w-10 items-center justify-center p-2 sm:min-h-8 sm:min-w-8 sm:p-1.5 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-md transition-colors"
                         title={sidebarOpen ? 'Close sidebar (⌘\\)' : 'Open sidebar (⌘\\)'}
                     >
                         <PanelLeft size={18} className="text-gray-500 dark:text-gray-400" />
@@ -334,7 +334,7 @@ export default function Home() {
                     {user && !isGuest && userRole === 'owner' && (
                         <button
                             onClick={() => setShowShare(true)}
-                            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                            className="flex min-h-10 sm:min-h-8 items-center gap-1.5 px-2 sm:px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                         >
                             <Share2 size={14} />
                             <span className="hidden sm:inline">Share</span>
@@ -383,7 +383,7 @@ export default function Home() {
                         <div className="relative">
                             <button
                                 onClick={() => setEmailClicked(!emailClicked)}
-                                className="flex items-center gap-1 sm:gap-2 px-1.5 sm:px-2 py-1.5 rounded-lg
+                                className="flex min-h-10 sm:min-h-8 items-center gap-1 sm:gap-2 px-1.5 sm:px-2 py-1.5 rounded-lg
                                            hover:bg-gray-100 dark:hover:bg-zinc-700/50 transition-colors"
                             >
                                 <UserAvatar
@@ -414,7 +414,7 @@ export default function Home() {
                     ) : (
                         <Link
                             href="/auth"
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400
+                            className="flex min-h-10 sm:min-h-8 items-center gap-1.5 px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400
                                        hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20
                                        rounded-lg transition-colors"
                         >
