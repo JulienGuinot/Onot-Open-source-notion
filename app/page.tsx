@@ -5,10 +5,11 @@ import Sidebar from '@/components/Sidebar'
 import SearchModal from '@/components/SearchModal'
 import KeyboardShortcutsModal from '@/components/KeyboardShortcutsModal'
 import ShareModal from '@/components/ShareModal'
+import AgentsModal from '@/components/AgentsModal'
 import ProfileSetupModal from '@/components/ProfileSetupModal'
 import PresenceAvatars from '@/components/PresenceAvatars'
 import { Page } from '@/lib/types'
-import { PanelLeft, LogIn, ChevronDown, Share2 } from 'lucide-react'
+import { PanelLeft, LogIn, ChevronDown, Share2, Signal, PlugZap } from 'lucide-react'
 import Link from 'next/link'
 import { useWorkspace } from '@/providers/WorkspaceProvider'
 import PageEditor from '@/components/pages/PageEditor'
@@ -64,7 +65,9 @@ export default function Home() {
     const [showSearch, setShowSearch] = useState(false)
     const [showShortcuts, setShowShortcuts] = useState(false)
     const [showShare, setShowShare] = useState(false)
+    const [showAgents, setShowAgents] = useState(false)
     const [wsContextMenu, setWsContextMenu] = useState<boolean>(false)
+    const [mcpModalOpen, setMcpModalOpen] = useState(false)
     const [syncModalOpen, setSyncModalOpen] = useState(false)
 
     const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -293,6 +296,7 @@ export default function Home() {
                     onToggleDarkMode={toggleDarkMode}
                     onShowShortcuts={() => setShowShortcuts(true)}
                     onShowShare={() => setShowShare(true)}
+                    onShowAgents={() => setShowAgents(true)}
                     onSwitchWorkspace={switchWorkspace}
                     onCreateWorkspace={createWorkspace}
                     onDeleteWorkspace={deleteWorkspace}
@@ -369,15 +373,33 @@ export default function Home() {
                                     />
                                 }
                             </div>
-
-
-
-
                         </>
-
-
                     )}
 
+
+                    {/*  MCP  */}
+                    {/* {user && !isGuest && (
+                        <div className="relative">
+                            <button
+                                onClick={() => setMcpModalOpen(!mcpModalOpen)}
+                                className="flex min-h-10 sm:min-h-8 items-center gap-1 sm:gap-2 px-1.5 sm:px-2 py-1.5 rounded-lg
+                                        hover:bg-gray-100 dark:hover:bg-zinc-700/50 transition-colors"
+                            >
+                                <PlugZap className='h-4 w-4' />
+                                <span className="text-sm text-gray-700 dark:text-gray-300 max-w-[120px] truncate hidden sm:block">
+                                    MCP
+                                </span>
+                                <ChevronDown size={12} className={`text-gray-400 transition-transform duration-200 ${mcpModalOpen ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            {mcpModalOpen && profile && (
+                                <AgentsModal
+                                    isOpen={true}
+                                    onClose={() => setMcpModalOpen(false)}
+                                />
+                            )}
+                        </div>
+                    )} */}
 
                     {user ? (
                         <div className="relative">
@@ -479,6 +501,12 @@ export default function Home() {
                 isOpen={showShare}
                 onClose={() => setShowShare(false)}
             />
+
+            {/* AI agents modal */}
+            {/* <AgentsModal
+                isOpen={showAgents}
+                onClose={() => setShowAgents(false)}
+            /> */}
 
             {/* Profile setup modal (post-signup) */}
             <ProfileSetupModal

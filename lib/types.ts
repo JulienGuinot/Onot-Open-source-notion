@@ -183,6 +183,16 @@ export interface WorkspaceInvite {
     created_by?: string;
 }
 
+export interface AgentToken {
+    id: string;
+    user_id: string;
+    name: string;
+    token_prefix: string;
+    created_at: string;
+    last_used_at?: string | null;
+    revoked_at?: string | null;
+}
+
 export interface PresenceUser {
     user_id: string;
     email: string;

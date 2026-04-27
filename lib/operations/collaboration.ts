@@ -155,6 +155,17 @@ export async function acceptInvite(
         return null
     }
 
+    const { data: existing } = await supabase
+        .from('workspace_members')
+        .select('role')
+        .eq('workspace_id', invite.workspace_id)
+        .eq('user_id', userId)
+        .maybeSingle()
+
+    if (existing) {
+        return { workspaceId: invite.workspace_id, role: existing.role as MemberRole }
+    }
+
     const { error } = await supabase
         .from('workspace_members')
         .insert({
@@ -163,7 +174,7 @@ export async function acceptInvite(
             role: invite.role,
         })
 
-    if (error) {
+    if (error && (error as { code?: string }).code !== '23505') {
         console.error('Failed to accept invite:', formatError(error))
         return null
     }

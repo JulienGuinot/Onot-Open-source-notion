@@ -41,6 +41,7 @@ interface SidebarProps {
     onToggleDarkMode: () => void
     onShowShortcuts?: () => void
     onShowShare?: () => void
+    onShowAgents?: () => void
     onSwitchWorkspace: (id: string) => void
     onCreateWorkspace: (name: string) => void
     onDeleteWorkspace: (id: string) => void
@@ -78,6 +79,7 @@ export default function Sidebar({
     onToggleDarkMode,
     onShowShortcuts,
     onShowShare,
+    onShowAgents,
     onSwitchWorkspace,
     onCreateWorkspace,
     onDeleteWorkspace,
@@ -269,6 +271,7 @@ export default function Sidebar({
                             onManageMembers={() => {
                                 onShowShare?.()
                             }}
+                            onManageAgents={onShowAgents ? () => onShowAgents() : undefined}
                             onDelete={() => {
                                 onDeleteWorkspace(currentWorkspaceId)
                             }}

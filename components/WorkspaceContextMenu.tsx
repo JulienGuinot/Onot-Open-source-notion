@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Edit, Users, Share2, Trash2, Settings } from 'lucide-react'
+import { Edit, Users, Share2, Trash2, Settings, Bot } from 'lucide-react'
 
 interface WorkspaceContextMenuProps {
     x?: number
@@ -12,6 +12,7 @@ interface WorkspaceContextMenuProps {
     onClose: () => void
     onRename: (newName: string) => void
     onManageMembers: () => void
+    onManageAgents?: () => void
     onDelete: () => void
 }
 
@@ -24,6 +25,7 @@ export function WorkspaceContextMenu({
     onClose,
     onRename,
     onManageMembers,
+    onManageAgents,
     onDelete,
 }: WorkspaceContextMenuProps) {
     const menuRef = useRef<HTMLDivElement>(null)
@@ -164,6 +166,20 @@ export function WorkspaceContextMenu({
                         >
                             <Settings size={15} className="text-gray-400" />
                             <span>Workspace info</span>
+                        </button>
+                    )}
+
+                    {onManageAgents && (
+                        <button
+                            onClick={() => {
+                                onManageAgents()
+                                onClose()
+                            }}
+                            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-300
+                                       hover:bg-gray-100 dark:hover:bg-gray-700/60 text-left transition-colors"
+                        >
+                            <Bot size={15} className="text-gray-400" />
+                            <span>AI agents</span>
                         </button>
                     )}
 

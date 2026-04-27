@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
+import { useParams } from 'next/navigation'
 import { useAuth } from '@/providers/AuthProvider'
 import { saveCurrentWorkspaceId } from '@/lib/storage'
 import { Loader2, CheckCircle2, XCircle, LogIn } from 'lucide-react'
@@ -11,16 +11,15 @@ import { acceptInvite, fetchInviteByToken } from '@/lib/operations/collaboration
 type InviteState =
     | { status: 'loading' }
     | { status: 'needs_auth' }
-    | { status: 'preview'; workspaceName: string; role: string }
-    | { status: 'accepting' }
-    | { status: 'success'; workspaceId: string }
+    | { status: 'accepting'; workspaceName: string }
+    | { status: 'success'; workspaceId: string; workspaceName: string }
     | { status: 'error'; message: string }
 
 export default function InvitePage() {
     const params = useParams<{ token: string }>()
-    const router = useRouter()
     const { user, loading: authLoading } = useAuth()
     const [state, setState] = useState<InviteState>({ status: 'loading' })
+    const acceptedRef = useRef(false)
 
     const token = params.token
 
@@ -32,8 +31,10 @@ export default function InvitePage() {
             return
         }
 
-        const loadInvite = async () => {
-            setState({ status: 'loading' })
+        if (acceptedRef.current) return
+        acceptedRef.current = true
+
+        const run = async () => {
             const invite = await fetchInviteByToken(token)
             if (!invite) {
                 setState({ status: 'error', message: 'This invite link is invalid or has been revoked.' })
@@ -43,30 +44,24 @@ export default function InvitePage() {
                 setState({ status: 'error', message: 'This invite link has expired.' })
                 return
             }
-            setState({
-                status: 'preview',
-                workspaceName: invite.workspace_name ?? 'a workspace',
-                role: invite.role,
-            })
+
+            const wsName = invite.workspace_name ?? 'a workspace'
+            setState({ status: 'accepting', workspaceName: wsName })
+
+            const result = await acceptInvite(token, user.id)
+            if (!result) {
+                setState({ status: 'error', message: 'Failed to accept the invite. It may be invalid or expired.' })
+                return
+            }
+
+            saveCurrentWorkspaceId(result.workspaceId)
+            setState({ status: 'success', workspaceId: result.workspaceId, workspaceName: wsName })
+            // Hard nav forces WorkspaceProvider to re-fetch workspace list with new membership.
+            setTimeout(() => { window.location.href = '/' }, 800)
         }
 
-        loadInvite()
+        run()
     }, [token, user, authLoading])
-
-    const handleAccept = async () => {
-        if (!user) return
-        setState({ status: 'accepting' })
-
-        const result = await acceptInvite(token, user.id)
-        if (!result) {
-            setState({ status: 'error', message: 'Failed to accept the invite. It may be invalid or expired.' })
-            return
-        }
-
-        saveCurrentWorkspaceId(result.workspaceId)
-        setState({ status: 'success', workspaceId: result.workspaceId })
-        setTimeout(() => router.push('/'), 2000)
-    }
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4">
@@ -109,43 +104,20 @@ export default function InvitePage() {
                         </div>
                     )}
 
-                    {state.status === 'preview' && (
-                        <div className="flex flex-col items-center py-6 space-y-5">
-                            <p className="text-slate-300 text-center text-lg">
-                                You&apos;ve been invited to join
-                            </p>
-                            <div className="px-4 py-3 bg-slate-900/50 rounded-xl border border-slate-700 w-full text-center">
-                                <p className="text-white font-semibold text-xl">{state.workspaceName}</p>
-                                <p className="text-slate-400 text-sm mt-1">
-                                    as {state.role === 'editor' ? 'an editor' : 'a viewer'}
-                                </p>
-                            </div>
-                            <button
-                                onClick={handleAccept}
-                                className="w-full py-3.5 px-4 bg-gradient-to-r from-blue-500 to-violet-600
-                                           hover:from-blue-600 hover:to-violet-700 text-white font-semibold
-                                           rounded-xl shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40
-                                           transition-all"
-                            >
-                                Accept invite
-                            </button>
-                        </div>
-                    )}
-
                     {state.status === 'accepting' && (
-                        <div className="flex flex-col items-center py-8">
-                            <Loader2 className="w-8 h-8 text-blue-400 animate-spin mb-4" />
-                            <p className="text-slate-400">Joining workspace...</p>
+                        <div className="flex flex-col items-center py-8 space-y-3">
+                            <Loader2 className="w-8 h-8 text-blue-400 animate-spin mb-2" />
+                            <p className="text-slate-300">Joining <span className="text-white font-semibold">{state.workspaceName}</span>…</p>
                         </div>
                     )}
 
                     {state.status === 'success' && (
                         <div className="flex flex-col items-center py-6 space-y-4">
                             <CheckCircle2 className="w-12 h-12 text-green-400" />
-                            <p className="text-green-300 text-lg font-medium">
-                                You&apos;ve joined the workspace!
+                            <p className="text-green-300 text-lg font-medium text-center">
+                                Joined {state.workspaceName}!
                             </p>
-                            <p className="text-slate-400 text-sm">Redirecting...</p>
+                            <p className="text-slate-400 text-sm">Redirecting…</p>
                         </div>
                     )}
 

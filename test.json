@@ -1,0 +1,20 @@
+{
+    "mcpServers": {
+        "onot": {
+            "command": "C:\\Program Files\\nodejs\\node.exe",
+            "args": [
+                "C:\\Users\\julie\\Downloads\\CODE\\OpenSource\\Onot\\mcp\\dist\\index.js"
+            ],
+            "env": {
+                "SUPABASE_URL": "https://nvlciblkrettodwfyjnu.supabase.co",
+                "SUPABASE_ANON_KEY": "sb_publishable_U76Tnt5jE9RPrb5pSSFh4Q_2mLO4TzY",
+                "MCP_AGENT_EMAIL": "agent@mail.com",
+                "MCP_AGENT_PASSWORD": "Password123!"
+            }
+        }
+    },
+    "preferences": {
+        "sidebarMode": "chat",
+        "coworkScheduledTasksEnabled": false
+    }
+}

@@ -39,3 +39,7 @@ Thumbs.db
 # IDE
 .cursor/
 .history/
+.claude
+.cursor
+.codex
+.windsurf
