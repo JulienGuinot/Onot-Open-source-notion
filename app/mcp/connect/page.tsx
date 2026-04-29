@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Check, Loader2, ShieldAlert } from 'lucide-react'
@@ -26,6 +26,7 @@ function McpConnectContent() {
     const { user, loading } = useAuth()
     const [status, setStatus] = useState<'idle' | 'creating' | 'done' | 'error'>('idle')
     const [error, setError] = useState<string | null>(null)
+    const startedRef = useRef(false)
 
     const redirectUri = params.get('redirect_uri') ?? ''
     const state = params.get('state') ?? ''
@@ -35,7 +36,8 @@ function McpConnectContent() {
     }, [])
 
     useEffect(() => {
-        if (loading || !user || status !== 'idle') return
+        if (loading || !user) return
+        if (startedRef.current) return
         if (!redirectUri || !state) {
             setStatus('error')
             setError('Missing MCP connection parameters.')
@@ -46,13 +48,11 @@ function McpConnectContent() {
             setError('Invalid MCP callback URL.')
             return
         }
-
-        let cancelled = false
+        startedRef.current = true
 
         async function connect() {
             setStatus('creating')
             const result = await createAgentToken(`MCP browser auth - ${new Date().toLocaleString()}`)
-            if (cancelled) return
             if (!result) {
                 setStatus('error')
                 setError('Could not create an MCP token.')
@@ -70,8 +70,7 @@ function McpConnectContent() {
         }
 
         connect()
-        return () => { cancelled = true }
-    }, [loading, redirectUri, state, status, user])
+    }, [loading, redirectUri, state, user])
 
     return (
         <main className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[#181818] p-4">
