@@ -378,7 +378,7 @@ export default function Home() {
 
 
                     {/*  MCP  */}
-                    {/* {user && !isGuest && (
+                    {user && !isGuest && (
                         <div className="relative">
                             <button
                                 onClick={() => setMcpModalOpen(!mcpModalOpen)}
@@ -399,7 +399,7 @@ export default function Home() {
                                 />
                             )}
                         </div>
-                    )} */}
+                    )} 
 
                     {user ? (
                         <div className="relative">

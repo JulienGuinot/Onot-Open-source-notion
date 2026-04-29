@@ -5,9 +5,10 @@ A [Model Context Protocol](https://modelcontextprotocol.io) server that lets AI 
 read and write your Onot workspaces, pages and blocks — like the Notion MCP, but
 for Onot.
 
-The server authenticates with a **personal access token** generated in the Onot
-web app. It exchanges the token for a short-lived Supabase JWT and acts as the
-user that owns the token, so:
+The server authenticates through the Onot web app. On first launch it opens a
+browser authorization page, creates a personal access token for the signed-in
+user, stores it locally, then exchanges it for a short-lived Supabase JWT. It
+acts as the user that approved the connection, so:
 
 - The agent only sees workspaces that user is a member of.
 - All RLS policies in `supabase/migrations/` keep applying.
@@ -25,64 +26,42 @@ user that owns the token, so:
                                             │ POST /api/mcp/exchange
                                             ▼
                                   Onot Next.js → mints Supabase JWT
-                                  for the user that owns ONOT_TOKEN
+                                  for the user that approved access
 ```
 
-The Onot Next.js app sits in the loop only at session start (token → JWT
-exchange). After that the MCP server talks to Supabase directly; the web app
-picks up changes via its existing Supabase Realtime subscription.
+The Onot Next.js app sits in the loop only at browser authorization and session
+start (stored token → JWT exchange). After that the MCP server talks to
+Supabase directly; the web app picks up changes via its existing Supabase
+Realtime subscription.
 
 ---
 
-## 2. One-time setup
+## 2. User setup
 
-### 2.1 Generate a personal access token
+### 2.1 Add Onot to your MCP client
 
-In the Onot web app, open the workspace context menu → **AI agents** → **+ New
-token**. Give it a name (e.g. *Claude Desktop on laptop*) and copy the value
-shown — it starts with `onot_…` and is only displayed once. Treat it like a
-password.
-
-The token grants the bearer the same access as your own account, scoped to
-every workspace you are a member of. You can revoke it at any time from the
-same modal; revocation takes effect within a few seconds.
-
-### 2.2 Install and build
+The server is distributed as an npm package. You do **not** need to clone Onot,
+download this repo, or build anything locally. Your MCP client launches it with:
 
 ```bash
-cd mcp
-npm install
-npm run build
+npx -y onot-mcp@latest
 ```
 
-### 2.3 Configure environment
+Requirements:
 
-```bash
-cp .env.example .env
-# fill in SUPABASE_URL, SUPABASE_ANON_KEY, ONOT_TOKEN, ONOT_API_URL
-```
+- Node.js 18.18 or newer.
+- A browser session signed in to Onot.
 
-`SUPABASE_URL` / `SUPABASE_ANON_KEY` are the same values your Onot app uses
-(`NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY`). `ONOT_API_URL`
-is the base URL of your Onot deployment (e.g. `https://onot.app`, or
-`http://localhost:3000` for local dev).
-
-### 2.4 Smoke test
-
-```bash
-node --env-file=.env dist/index.js
-```
-
-You should see `[onot-mcp] ready (stdio)`. Stop with Ctrl-C — agents launch
-this binary themselves.
-
----
-
-## 3. Plugging an agent in
+On first launch, `onot-mcp` opens Onot in your browser. Approve the connection
+there; the MCP server stores a local token at `~/.onot/mcp.json` for future
+launches. You can revoke tokens from the **AI agents** modal in Onot.
 
 The server speaks **MCP over stdio**. Any MCP-capable client launches it as a
-child process. Below: configs for the three most common ones. Replace
-`/abs/path/to/Onot/mcp` with your real path.
+child process.
+
+---
+
+## 3. Client configs
 
 ### 3.1 Claude Desktop
 
@@ -93,36 +72,26 @@ or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
 {
   "mcpServers": {
     "onot": {
-      "command": "node",
-      "args": ["/abs/path/to/Onot/mcp/dist/index.js"],
-      "env": {
-        "SUPABASE_URL": "https://xxx.supabase.co",
-        "SUPABASE_ANON_KEY": "...",
-        "ONOT_TOKEN": "onot_...",
-        "ONOT_API_URL": "https://onot.app"
-      }
+      "command": "npx",
+      "args": ["-y", "onot-mcp@latest"]
     }
   }
 }
 ```
 
-Restart Claude Desktop. The `onot` server should appear in the tools menu.
+Restart Claude Desktop. On first use, approve access in the browser tab that
+opens. The `onot` server should then appear in the tools menu.
 
 ### 3.2 Claude Code (CLI)
 
 ```bash
-claude mcp add onot \
-  --env SUPABASE_URL=https://xxx.supabase.co \
-  --env SUPABASE_ANON_KEY=... \
-  --env ONOT_TOKEN=onot_... \
-  --env ONOT_API_URL=https://onot.app \
-  -- node /abs/path/to/Onot/mcp/dist/index.js
+claude mcp add onot -- npx -y onot-mcp@latest
 ```
 
 ### 3.3 Cursor / Codex / any stdio MCP client
 
-Same shape — point `command` at `node` and `args` at `dist/index.js`, pass the
-four env vars.
+Use the same JSON shape as Claude Desktop: `command` is `npx`, `args` is
+`["-y", "onot-mcp@latest"]`. On first launch, approve access in the browser.
 
 ### 3.4 Custom agent (OpenAI, LangGraph, your own loop)
 
@@ -133,14 +102,8 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
 const transport = new StdioClientTransport({
-  command: 'node',
-  args: ['/abs/path/to/Onot/mcp/dist/index.js'],
-  env: {
-    SUPABASE_URL: process.env.SUPABASE_URL!,
-    SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY!,
-    ONOT_TOKEN: process.env.ONOT_TOKEN!,
-    ONOT_API_URL: process.env.ONOT_API_URL!,
-  },
+  command: 'npx',
+  args: ['-y', 'onot-mcp@latest'],
 });
 
 const client = new Client({ name: 'my-agent', version: '0.0.1' });
@@ -156,6 +119,29 @@ const res = await client.callTool({
 Hook the tool definitions returned by `listTools()` into whatever tool-calling
 mechanism your model uses (OpenAI `tools`, Anthropic `tools`, Vercel AI SDK,
 LangChain `Tool`, etc.).
+
+### 3.5 Local development
+
+For development on this repo, run the package locally instead of using npm:
+
+```bash
+cd mcp
+npm install
+npm run build
+node --env-file=.env dist/index.js
+```
+
+Your `.env` must contain:
+
+```bash
+ONOT_API_URL=http://localhost:3000
+```
+
+`ONOT_API_URL` is optional for the hosted app, but useful in local development
+so the browser authorization page opens your local Next.js server.
+
+You should see `[onot-mcp] ready (stdio)`. Stop with Ctrl-C — MCP clients
+normally launch this process themselves.
 
 ---
 
@@ -210,8 +196,11 @@ table, drawing, youtube, file, map`.
 
 ## 5. Safety guarantees
 
-- **Authentication.** The server exchanges `ONOT_TOKEN` at `/api/mcp/exchange`
-  for a short-lived (1 h) Supabase JWT signed with `SUPABASE_JWT_SECRET`. The
+- **Authentication.** The first launch opens `/mcp/connect` in the browser.
+  The signed-in user approves the MCP client, which creates a personal access
+  token and returns it to a localhost callback. The MCP server stores it at
+  `~/.onot/mcp.json`, then exchanges it at `/api/mcp/exchange` for a
+  short-lived (1 h) Supabase JWT signed with `SUPABASE_JWT_SECRET`. The
   exchange is repeated transparently when the JWT is close to expiry. Wrong
   or revoked tokens fail fast with a 401 — no silent fallback.
 - **Authorization.** Every mutation calls `assertWriteAccess` first, which
@@ -262,7 +251,42 @@ Workflow rules:
 
 ---
 
-## 8. Roadmap (optional next steps)
+## 8. Maintainer release checklist
+
+This package is intended to be installable directly from npm by end users.
+Before publishing a new version:
+
+1. Update `mcp/package.json` version.
+2. Run `npm install` at the repo root if lockfiles need to change.
+3. Run `npm install` and `npm run build` inside `mcp/`.
+4. Run a local smoke test:
+
+   ```bash
+   cd mcp
+   node --env-file=.env dist/index.js
+   ```
+
+5. Check the packed artifact:
+
+   ```bash
+   cd mcp
+   npm pack --dry-run
+   ```
+
+   The package should include `dist/`, `README.md`, and `package.json`.
+
+6. Publish from `mcp/`:
+
+   ```bash
+   npm publish
+   ```
+
+After publishing, the generated user configs automatically resolve the new
+version through `npx -y onot-mcp@latest`.
+
+---
+
+## 9. Roadmap (optional next steps)
 
 - HTTP/SSE transport (`StreamableHTTPServerTransport`) so a single hosted
   server can be shared by multiple users.

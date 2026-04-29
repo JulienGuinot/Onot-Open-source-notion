@@ -8,6 +8,9 @@ import { savePageToCloud } from './operations/pages'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
+export const publicSupabaseUrl = supabaseUrl ?? ''
+export const publicSupabaseAnonKey = supabaseKey ?? ''
+
 let supabase: SupabaseClient | null = null
 
 if (supabaseUrl && supabaseKey) {
@@ -77,4 +80,3 @@ export async function migrateOldCloudData(
 
     return results.length ? results : null
 }
-

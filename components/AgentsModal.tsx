@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { X, Bot, Plus, Copy, Check, Trash2, AlertTriangle, BookOpen } from 'lucide-react'
+import { X, Bot, Copy, Check, Trash2, BookOpen } from 'lucide-react'
 import { AgentToken } from '@/lib/types'
-import { createAgentToken, listAgentTokens, revokeAgentToken } from '@/lib/operations/agentTokens'
+import { listAgentTokens, revokeAgentToken } from '@/lib/operations/agentTokens'
 import { buildMcpConfig, CLIENT_LABELS, McpClient } from '@/lib/mcpConfig'
 
 interface AgentsModalProps {
@@ -14,11 +14,8 @@ interface AgentsModalProps {
 export default function AgentsModal({ isOpen, onClose }: AgentsModalProps) {
     const [tokens, setTokens] = useState<AgentToken[]>([])
     const [loading, setLoading] = useState(false)
-    const [name, setName] = useState('')
-    const [creating, setCreating] = useState(false)
-    const [justCreated, setJustCreated] = useState<{ token: AgentToken; secret: string } | null>(null)
     const [client, setClient] = useState<McpClient>('claude-desktop')
-    const [copied, setCopied] = useState<'secret' | 'config' | null>(null)
+    const [copied, setCopied] = useState<'config' | null>(null)
     const [detail, setDetail] = useState<AgentToken | null>(null)
 
     useEffect(() => {
@@ -36,8 +33,6 @@ export default function AgentsModal({ isOpen, onClose }: AgentsModalProps) {
 
     useEffect(() => {
         if (!isOpen) {
-            setJustCreated(null)
-            setName('')
             setCopied(null)
             setDetail(null)
         }
@@ -45,46 +40,19 @@ export default function AgentsModal({ isOpen, onClose }: AgentsModalProps) {
 
     if (!isOpen) return null
 
-    const handleCreate = async () => {
-        const trimmed = name.trim()
-        if (!trimmed) return
-        setCreating(true)
-        try {
-            const result = await createAgentToken(trimmed)
-            if (result) {
-                setJustCreated(result)
-                setTokens((prev) => [result.token, ...prev])
-                setName('')
-            }
-        } finally {
-            setCreating(false)
-        }
-    }
-
     const handleRevoke = async (id: string) => {
         if (!confirm('Revoke this token? Any agent using it will lose access.')) return
         const ok = await revokeAgentToken(id)
         if (ok) setTokens((prev) => prev.filter((t) => t.id !== id))
     }
 
-    const copy = async (value: string, kind: 'secret' | 'config') => {
+    const copy = async (value: string) => {
         await navigator.clipboard.writeText(value)
-        setCopied(kind)
+        setCopied('config')
         setTimeout(() => setCopied(null), 2000)
     }
 
-    const apiUrl = typeof window !== 'undefined' ? window.location.origin : ''
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
-
-    const config = justCreated
-        ? buildMcpConfig(client, {
-            token: justCreated.secret,
-            apiUrl,
-            supabaseUrl,
-            supabaseAnonKey,
-        })
-        : ''
+    const config = buildMcpConfig(client)
 
     return (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
@@ -99,7 +67,7 @@ export default function AgentsModal({ isOpen, onClose }: AgentsModalProps) {
                             AI agents
                         </h2>
                         <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-                            Create a token to connect Claude Desktop, Cursor or any MCP client to your Onot account.
+                            Connect Claude Desktop, Cursor or any MCP client to your Onot account.
                         </p>
                     </div>
                     <button
@@ -111,120 +79,56 @@ export default function AgentsModal({ isOpen, onClose }: AgentsModalProps) {
                 </div>
 
                 <div className="p-4 sm:p-5 space-y-6 overflow-y-auto">
-                    {/* Create new */}
-                    {!justCreated && (
-                        <div className="space-y-3">
-                            <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                New token
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                    Install Onot MCP
+                                </div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                    Add the server, then approve access in the browser when your MCP client starts it.
+                                </div>
                             </div>
-                            <div className="flex flex-col sm:flex-row gap-2">
-                                <input
-                                    type="text"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    onKeyDown={(e) => { if (e.key === 'Enter') handleCreate() }}
-                                    placeholder="e.g. Claude Desktop on laptop"
-                                    maxLength={80}
-                                    className="flex-1 px-3 py-2 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-200
-                                               dark:border-gray-700 rounded-lg text-gray-700 dark:text-gray-300
-                                               focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-                                />
+                            <div className="flex gap-1">
+                                {(Object.keys(CLIENT_LABELS) as McpClient[]).map((c) => (
+                                    <button
+                                        key={c}
+                                        onClick={() => setClient(c)}
+                                        className={`px-2 py-1 text-xs rounded-md transition-colors ${client === c
+                                                ? 'bg-blue-500 text-white'
+                                                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                                            }`}
+                                    >
+                                        {CLIENT_LABELS[c]}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="relative">
+                            <pre className="p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700
+                                            rounded-lg text-xs font-mono text-gray-700 dark:text-gray-300 overflow-x-auto whitespace-pre">
+                                {config}
+                            </pre>
                                 <button
-                                    onClick={handleCreate}
-                                    disabled={creating || !name.trim()}
-                                    className="flex items-center justify-center gap-2 px-4 py-2 text-sm
-                                               bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors
-                                               disabled:opacity-50 font-medium"
+                                    onClick={() => copy(config)}
+                                    className="absolute top-2 right-2 p-1.5 bg-white dark:bg-gray-800 border border-gray-200
+                                               dark:border-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                                 >
-                                    <Plus size={14} />
-                                    {creating ? 'Creating...' : 'Create token'}
+                                    {copied === 'config'
+                                        ? <Check size={14} className="text-green-600" />
+                                        : <Copy size={14} className="text-gray-500" />}
                                 </button>
-                            </div>
                         </div>
-                    )}
-
-                    {/* Just-created reveal */}
-                    {justCreated && (
-                        <div className="space-y-3">
-                            <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20
-                                            border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-sm">
-                                <AlertTriangle size={16} className="shrink-0 mt-0.5" />
-                                <div>
-                                    Copy this token now — it will not be shown again. Treat it like a password; any holder can act as your account.
-                                </div>
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <div className="text-xs font-medium uppercase tracking-wider text-gray-400">Token</div>
-                                <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20
-                                                border border-green-200 dark:border-green-800 rounded-lg">
-                                    <code className="flex-1 text-xs font-mono text-green-800 dark:text-green-300 break-all">
-                                        {justCreated.secret}
-                                    </code>
-                                    <button
-                                        onClick={() => copy(justCreated.secret, 'secret')}
-                                        className="p-1.5 hover:bg-green-100 dark:hover:bg-green-800/40 rounded-md transition-colors shrink-0"
-                                    >
-                                        {copied === 'secret'
-                                            ? <Check size={16} className="text-green-600" />
-                                            : <Copy size={16} className="text-green-600" />}
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="space-y-1.5">
-                                <div className="flex items-center justify-between">
-                                    <div className="text-xs font-medium uppercase tracking-wider text-gray-400">MCP client config</div>
-                                    <div className="flex gap-1">
-                                        {(Object.keys(CLIENT_LABELS) as McpClient[]).map((c) => (
-                                            <button
-                                                key={c}
-                                                onClick={() => setClient(c)}
-                                                className={`px-2 py-1 text-xs rounded-md transition-colors ${client === c
-                                                        ? 'bg-blue-500 text-white'
-                                                        : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                                                    }`}
-                                            >
-                                                {CLIENT_LABELS[c]}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                                <div className="relative">
-                                    <pre className="p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700
-                                                    rounded-lg text-xs font-mono text-gray-700 dark:text-gray-300 overflow-x-auto whitespace-pre">
-                                        {config}
-                                    </pre>
-                                    <button
-                                        onClick={() => copy(config, 'config')}
-                                        className="absolute top-2 right-2 p-1.5 bg-white dark:bg-gray-800 border border-gray-200
-                                                   dark:border-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                                    >
-                                        {copied === 'config'
-                                            ? <Check size={14} className="text-green-600" />
-                                            : <Copy size={14} className="text-gray-500" />}
-                                    </button>
-                                </div>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
-                                    Replace <code>/abs/path/to/Onot/mcp/dist/index.js</code> with the path on your machine after running <code>npm install &amp;&amp; npm run build</code> inside <code>mcp/</code>.
-                                </p>
-                            </div>
-
-                            <ClientInstructions client={client} />
-
-                            <button
-                                onClick={() => setJustCreated(null)}
-                                className="text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                            >
-                                Done — back to token list
-                            </button>
-                        </div>
-                    )}
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                            The first launch opens Onot in your browser. After approval, the MCP server stores a local token for future launches.
+                        </p>
+                        <ClientInstructions client={client} />
+                    </div>
 
                     {/* Existing tokens */}
                     <div className="space-y-2">
                         <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                            Active tokens ({tokens.length})
+                            Authorized MCP clients ({tokens.length})
                         </div>
                         {loading ? (
                             <div className="text-sm text-gray-400">Loading…</div>
@@ -271,9 +175,6 @@ export default function AgentsModal({ isOpen, onClose }: AgentsModalProps) {
             {detail && (
                 <TokenDetailModal
                     token={detail}
-                    apiUrl={apiUrl}
-                    supabaseUrl={supabaseUrl}
-                    supabaseAnonKey={supabaseAnonKey}
                     onClose={() => setDetail(null)}
                     onRevoke={async () => {
                         await handleRevoke(detail.id)
@@ -287,35 +188,13 @@ export default function AgentsModal({ isOpen, onClose }: AgentsModalProps) {
 
 function TokenDetailModal({
     token,
-    apiUrl,
-    supabaseUrl,
-    supabaseAnonKey,
     onClose,
     onRevoke,
 }: {
     token: AgentToken
-    apiUrl: string
-    supabaseUrl: string
-    supabaseAnonKey: string
     onClose: () => void
     onRevoke: () => void
 }) {
-    const [client, setClient] = useState<McpClient>('claude-desktop')
-    const [copied, setCopied] = useState(false)
-
-    const config = buildMcpConfig(client, {
-        token: '<your-token>',
-        apiUrl,
-        supabaseUrl,
-        supabaseAnonKey,
-    })
-
-    const copy = async () => {
-        await navigator.clipboard.writeText(config)
-        setCopied(true)
-        setTimeout(() => setCopied(false), 2000)
-    }
-
     return (
         <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
@@ -367,51 +246,6 @@ function TokenDetailModal({
                         </div>
                     </div>
 
-                    <div className="flex items-start gap-2 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/60
-                                    border border-gray-200 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-400">
-                        <AlertTriangle size={14} className="shrink-0 mt-0.5 text-amber-500" />
-                        <div>
-                            Full secret only shown once at creation. Below is the config template — replace <code>&lt;your-token&gt;</code> with the secret you saved. Lost it? Revoke and create a new one.
-                        </div>
-                    </div>
-
-                    <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                            <div className="text-xs font-medium uppercase tracking-wider text-gray-400">Config template</div>
-                            <div className="flex gap-1">
-                                {(Object.keys(CLIENT_LABELS) as McpClient[]).map((c) => (
-                                    <button
-                                        key={c}
-                                        onClick={() => setClient(c)}
-                                        className={`px-2 py-1 text-xs rounded-md transition-colors ${client === c
-                                                ? 'bg-blue-500 text-white'
-                                                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
-                                            }`}
-                                    >
-                                        {CLIENT_LABELS[c]}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="relative">
-                            <pre className="p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700
-                                            rounded-lg text-xs font-mono text-gray-700 dark:text-gray-300 overflow-x-auto whitespace-pre">
-                                {config}
-                            </pre>
-                            <button
-                                onClick={copy}
-                                className="absolute top-2 right-2 p-1.5 bg-white dark:bg-gray-800 border border-gray-200
-                                           dark:border-gray-700 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                            >
-                                {copied
-                                    ? <Check size={14} className="text-green-600" />
-                                    : <Copy size={14} className="text-gray-500" />}
-                            </button>
-                        </div>
-                    </div>
-
-                    <ClientInstructions client={client} />
-
                     {!token.revoked_at && (
                         <button
                             onClick={onRevoke}
@@ -435,30 +269,30 @@ function ClientInstructions({ client }: { client: McpClient }) {
             title: 'Add to Claude Desktop',
             docs: { label: 'MCP docs', href: 'https://modelcontextprotocol.io/quickstart/user' },
             items: [
-                <>Build the MCP server: <code>cd mcp &amp;&amp; npm install &amp;&amp; npm run build</code>.</>,
+                <>Install Node.js 18 or newer if it is not already installed.</>,
                 <>Open Claude Desktop → <b>Settings</b> → <b>Developer</b> → <b>Edit Config</b>.</>,
-                <>Paste the JSON above into <code>claude_desktop_config.json</code>. If <code>mcpServers</code> already exists, merge the <code>onot</code> entry into it.</>,
-                <>Replace the placeholder path with the absolute path to <code>mcp/dist/index.js</code>.</>,
-                <>Quit Claude Desktop fully (tray icon → Quit) then reopen. The <b>onot</b> tools should appear in the tools menu.</>,
+                <>Paste the JSON above into <code>claude_desktop_config.json</code>. If the file already has <code>mcpServers</code>, add only the <code>onot</code> entry inside it.</>,
+                <>Quit Claude Desktop fully (tray icon → Quit) then reopen.</>,
+                <>When Onot starts for the first time, approve access in the browser tab that opens.</>,
             ],
         },
         cursor: {
             title: 'Add to Cursor',
             docs: { label: 'Cursor MCP docs', href: 'https://docs.cursor.com/context/model-context-protocol' },
             items: [
-                <>Build the MCP server: <code>cd mcp &amp;&amp; npm install &amp;&amp; npm run build</code>.</>,
+                <>Install Node.js 18 or newer if it is not already installed.</>,
                 <>Cursor → <b>Settings</b> → <b>MCP</b> → <b>Add new MCP server</b> (or edit <code>~/.cursor/mcp.json</code>).</>,
-                <>Paste the JSON above and set the absolute path to <code>mcp/dist/index.js</code>.</>,
-                <>Reload Cursor. Open the chat → <b>Tools</b> panel — <b>onot</b> should be listed and toggleable.</>,
+                <>Paste the JSON above. Cursor will use <code>npx</code> to download and run the Onot MCP package automatically.</>,
+                <>Reload Cursor, then approve access in the browser tab that opens on first launch.</>,
             ],
         },
         'claude-code': {
             title: 'Add to Claude Code (CLI)',
             docs: { label: 'Claude Code MCP docs', href: 'https://docs.claude.com/en/docs/claude-code/mcp' },
             items: [
-                <>Build the MCP server: <code>cd mcp &amp;&amp; npm install &amp;&amp; npm run build</code>.</>,
-                <>Run the <code>claude mcp add</code> command above in your terminal. Replace the path with the absolute path to <code>mcp/dist/index.js</code>.</>,
-                <>Verify with <code>claude mcp list</code> — <b>onot</b> should be present.</>,
+                <>Install Node.js 18 or newer if it is not already installed.</>,
+                <>Run the <code>claude mcp add</code> command above in your terminal.</>,
+                <>Start Claude Code and approve access in the browser tab that opens on first launch.</>,
                 <>Inside a Claude Code session, run <code>/mcp</code> to confirm the server is connected.</>,
             ],
         },

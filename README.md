@@ -20,7 +20,7 @@ Create a `.env.local` file:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_key
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
 ### Development
@@ -43,6 +43,24 @@ npm run start
 ```bash
 npm run typecheck
 ```
+
+## MCP Server
+
+Onot includes an MCP server so Claude Desktop, Claude Code, Cursor and other
+MCP clients can read and edit a user's Onot workspaces through a personal
+access token.
+
+End users do not need to clone this repository. MCP clients can launch the
+published package with one command:
+
+```bash
+npx -y onot-mcp@latest
+```
+
+The first launch opens Onot in the browser so the user can approve access.
+
+See [`mcp/README.md`](mcp/README.md) for client configs, local development
+instructions, and the npm release checklist.
 
 ## Features
 
@@ -107,4 +125,3 @@ The app is fully client-side for now but ready for server-side features:
 ## License
 
 Open source
-

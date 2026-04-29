@@ -19,6 +19,7 @@ export function newBlock(type: BlockType, content = '', extra: Partial<Block> = 
 export function* walkBlocks(blocks: Block[], parent: Block[] = []): Generator<{ block: Block; parent: Block[]; index: number }> {
     for (let i = 0; i < blocks.length; i++) {
         const b = blocks[i];
+        if (!b) continue;
         yield { block: b, parent: blocks, index: i };
         if (b.children?.length) {
             yield* walkBlocks(b.children, b.children);
@@ -37,7 +38,7 @@ export function removeBlock(page: Page, blockId: string): Block | null {
     const hit = findBlock(page, blockId);
     if (!hit) return null;
     const [removed] = hit.parent.splice(hit.index, 1);
-    return removed;
+    return removed ?? null;
 }
 
 /**

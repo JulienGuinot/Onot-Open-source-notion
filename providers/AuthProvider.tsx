@@ -154,7 +154,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!supabase) throw new Error('Supabase not configured')
         const { error } = await supabase.auth.signInWithOAuth({
             provider,
-            options: { redirectTo: window.location.origin }
+            options: { redirectTo: window.location.href }
         })
         if (error) throw error
     }, [])

@@ -1,14 +1,32 @@
 {
   "name": "onot-mcp",
-  "version": "0.1.0",
-  "private": true,
+  "version": "0.1.1",
+  "private": false,
   "type": "module",
   "description": "MCP server exposing Onot workspaces, pages and blocks to AI agents.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JulienGuinot/Onot-Open-source-notion.git",
+    "directory": "mcp"
+  },
+  "bugs": {
+    "url": "https://github.com/JulienGuinot/Onot-Open-source-notion/issues"
+  },
+  "homepage": "https://github.com/JulienGuinot/Onot-Open-source-notion#readme",
+  "engines": {
+    "node": ">=18.18"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "package.json"
+  ],
   "bin": {
     "onot-mcp": "dist/index.js"
   },
   "scripts": {
     "build": "tsc",
+    "prepack": "npm run build",
     "start": "node dist/index.js",
     "dev": "tsc --watch",
     "gen-config": "node scripts/generate-config.mjs"

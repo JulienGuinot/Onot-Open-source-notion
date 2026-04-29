@@ -1,13 +1,21 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/providers/AuthProvider'
 import { Mail, Lock, ArrowRight, Loader2, AlertCircle, Github, User } from 'lucide-react'
 
 type AuthMode = 'login' | 'signup'
 
 export default function AuthPage() {
+    return (
+        <Suspense fallback={null}>
+            <AuthPageContent />
+        </Suspense>
+    )
+}
+
+function AuthPageContent() {
     const [mode, setMode] = useState<AuthMode>('login')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
@@ -17,6 +25,8 @@ export default function AuthPage() {
 
     const { signIn, signUp, signInWithOAuth, continueAsGuest } = useAuth()
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const nextPath = searchParams.get('next') || '/'
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -50,7 +60,7 @@ export default function AuthPage() {
                 setLoading(false)
                 return
             }
-            router.push('/')
+            router.push(nextPath)
         } catch (err: any) {
             setError(err.message || 'Authentication failed')
         } finally {
@@ -262,4 +272,3 @@ export default function AuthPage() {
         </div>
     )
 }
-
